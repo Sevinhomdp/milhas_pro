@@ -22,13 +22,6 @@ export default async function Page() {
     supabase.from('metas').select('*').eq('user_id', user.id)
   ])
 
-  console.log("=== SUPABASE DIAGNOSTIC ===")
-  console.log(`User ID logged in: ${user.id}`)
-  console.log(`Saldos fetched: ${saldos?.length}`)
-  console.log(`Operacoes fetched: ${operacoes?.length}`)
-  console.log(`Faturas fetched: ${faturas?.length}`)
-  console.log("===========================")
-
   return (
     <Dashboard
       saldos={saldos || []}
