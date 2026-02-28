@@ -2,53 +2,142 @@
 @import "tw-animate-css";
 
 @theme {
-  --color-primary: #0f172a;
-  --color-accent: #d4af37;
-  --color-bg: #f1f5f9;
-  --color-surface: #ffffff;
-  --color-success: #16a34a;
-  --color-danger: #dc2626;
-  --color-warning: #f59e0b;
-  --color-gray: #64748b;
-  
-  --color-bgDark: #020617;
-  --color-surfaceDark: #0f172a;
-  --color-borderDark: rgba(255,255,255,0.06);
+  /* ── Cores principais ── */
+  --color-primary:        #0f172a;
+  --color-accent:         #d4af37;
+  --color-accent-dim:     rgba(212, 175, 55, 0.08);
+  --color-accent-border:  rgba(212, 175, 55, 0.25);
+  --color-bg:             #f1f5f9;
+  --color-surface:        #ffffff;
+  --color-success:        #16a34a;
+  --color-danger:         #dc2626;
+  --color-warning:        #f59e0b;
+  --color-gray:           #64748b;
 
+  /* ── Dark mode — 3 níveis de superfície ── */
+  --color-bgDark:         #020617;
+  --color-surfaceDark:    #0c1425;
+  --color-surfaceDark2:   #131f35;
+  --color-borderDark:     rgba(255, 255, 255, 0.07);
+  --color-borderDark2:    rgba(255, 255, 255, 0.14);
+
+  /* ── Tipografia ── */
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-mono: var(--font-mono), "JetBrains Mono", ui-monospace, Menlo, monospace;
 }
 
+/* ── BASE ──────────────────────────────────────────── */
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
-}
 
-@layer utilities {
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-}
-
-@media print {
-  aside, header, .no-print {
-    display: none !important;
-  }
-  main {
-    padding: 0 !important;
-    margin: 0 !important;
-  }
   body {
-    background: white !important;
-    color: black !important;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  .dark {
-    background: white !important;
-    color: black !important;
+
+  /* Scrollbar fina e elegante */
+  ::-webkit-scrollbar           { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track     { background: transparent; }
+  ::-webkit-scrollbar-thumb     {
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: 99px;
   }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.45); }
+  .dark ::-webkit-scrollbar-thumb     { background: rgba(255,255,255,0.08); }
+  .dark ::-webkit-scrollbar-thumb:hover{ background: rgba(255,255,255,0.16); }
+
+  /* Seleção de texto dourada */
+  ::selection {
+    background: rgba(212, 175, 55, 0.22);
+    color: inherit;
+  }
+}
+
+/* ── UTILITÁRIOS ────────────────────────────────────── */
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Números financeiros — evita tremer ao mudar valor */
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* Label de campo — padrão Bloomberg */
+  .field-label {
+    @apply block text-[10px] font-bold uppercase tracking-[0.1em]
+           text-gray-400 dark:text-gray-500 mb-1.5;
+  }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    @apply rounded-lg bg-gray-200/80 dark:bg-white/5 animate-pulse;
+  }
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255,255,255,0.02) 0%,
+      rgba(255,255,255,0.07) 50%,
+      rgba(255,255,255,0.02) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+
+  /* Card base — usado em todos os containers */
+  .card {
+    @apply rounded-2xl bg-white dark:bg-surfaceDark
+           border border-gray-100 dark:border-borderDark
+           shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_16px_rgba(0,0,0,0.04)]
+           dark:shadow-[0_2px_8px_rgba(0,0,0,0.35),0_1px_3px_rgba(0,0,0,0.2)];
+  }
+  .card-hover {
+    @apply transition-all duration-200
+           hover:border-gray-200 dark:hover:border-borderDark2
+           hover:shadow-[0_4px_20px_rgba(0,0,0,0.08),0_1px_4px_rgba(0,0,0,0.04)]
+           dark:hover:shadow-[0_4px_24px_rgba(0,0,0,0.5),0_1px_6px_rgba(0,0,0,0.3)];
+  }
+
+  /* Glow dourado — para elementos de destaque máximo */
+  .glow-gold {
+    box-shadow: 0 0 0 1px rgba(212,175,55,0.2),
+                0 0 24px rgba(212,175,55,0.15),
+                0 0 48px rgba(212,175,55,0.06);
+  }
+}
+
+/* ── ANIMAÇÕES ──────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fadeInUp { animation: fadeInUp 0.3s ease-out forwards; }
+.animate-fadeIn   { animation: fadeIn 0.25s ease-out forwards; }
+
+/* stagger nos filhos */
+.stagger-children > *:nth-child(1) { animation-delay: 0ms;  }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms;}
+.stagger-children > *:nth-child(4) { animation-delay: 180ms;}
+.stagger-children > *:nth-child(5) { animation-delay: 240ms;}
+.stagger-children > *:nth-child(6) { animation-delay: 300ms;}
+
+/* ── PRINT ──────────────────────────────────────────── */
+@media print {
+  aside, header, .no-print { display: none !important; }
+  main  { padding: 0 !important; margin: 0 !important; }
+  body  { background: white !important; color: black !important; }
 }

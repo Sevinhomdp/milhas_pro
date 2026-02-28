@@ -4,22 +4,23 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
-import { 
-  LayoutDashboard, 
-  Wallet, 
-  ArrowRightLeft, 
-  BarChart3, 
-  TrendingUp, 
-  Calculator, 
-  CreditCard, 
-  Target, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Wallet,
+  ArrowRightLeft,
+  BarChart3,
+  TrendingUp,
+  Calculator,
+  CreditCard,
+  Target,
+  Settings,
   LogOut,
-  Menu,
   X,
   Plane,
   Sun,
-  Moon
+  Moon,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react"
 import { cn } from "@/src/lib/utils"
 import { createClient } from "@/src/lib/supabase/client"
@@ -88,57 +89,94 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v:
       {/* Sidebar */}
       <motion.aside
         initial={false}
-        animate={{ 
+        animate={{
           width: isOpen ? 280 : 80,
           x: isOpen ? 0 : (typeof window !== 'undefined' && window.innerWidth < 1024 ? -280 : 0)
         }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-primary dark:bg-surfaceDark text-white shadow-xl transition-all duration-300 ease-in-out lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex flex-col text-white",
+          "bg-[#060d1a]",
+          "border-r border-white/5",
+          "shadow-[4px_0_24px_rgba(0,0,0,0.4)]",
+          "transition-colors duration-300 lg:translate-x-0",
           !isOpen && "lg:w-20"
         )}
       >
+        {/* Header */}
         <div className="flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3 overflow-hidden whitespace-nowrap">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
-              <Plane className="h-6 w-6" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-primary shadow-[0_0_20px_rgba(212,175,55,0.35)]">
+              <Plane className="h-5 w-5" />
             </div>
-            {isOpen && <span className="text-xl font-bold tracking-tight text-white">MILHAS PRO</span>}
+            {isOpen && (
+              <span className="text-[15px] font-black tracking-wide text-white">
+                MILHAS<span className="text-accent">PRO</span>
+              </span>
+            )}
           </div>
-          <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden text-gray-400 hover:text-white">
-            <X className="h-6 w-6" />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Desktop toggle */}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="hidden lg:flex items-center justify-center h-7 w-7 rounded-lg text-gray-500 hover:bg-white/5 hover:text-gray-300 transition-colors duration-150"
+            >
+              {isOpen
+                ? <PanelLeftClose className="h-4 w-4" />
+                : <PanelLeftOpen className="h-4 w-4" />
+              }
+            </button>
+            {/* Mobile close */}
+            <button onClick={() => setIsOpen(false)} className="lg:hidden text-gray-400 hover:text-white p-1">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
-        <div className="mt-8 flex-1 overflow-y-auto px-3 py-4 scrollbar-hide">
-          <nav className="space-y-1">
+        {/* Nav */}
+        <div className="mt-4 flex-1 overflow-y-auto px-3 py-2 scrollbar-hide">
+          <nav className="space-y-0.5">
             {navItems.map((item) => {
               const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => typeof window !== 'undefined' && window.innerWidth < 1024 && setIsOpen(false)}
-                  className={cn(
-                    "group flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-colors",
-                    isActive 
-                      ? "bg-accent text-primary dark:bg-accent/10 dark:text-accent" 
-                      : "text-gray-400 hover:bg-white/5 hover:text-white"
+                <React.Fragment key={item.href}>
+                  {/* Separador antes de Configurações */}
+                  {item.href === '/configuracoes' && (
+                    <div className="mx-3 my-3 h-px bg-white/5" />
                   )}
-                >
-                  <item.icon className={cn("h-5 w-5 shrink-0", isOpen && "mr-3")} />
-                  {isOpen && <span>{item.label}</span>}
-                </Link>
+                  <Link
+                    href={item.href}
+                    title={!isOpen ? item.label : undefined}
+                    onClick={() => typeof window !== 'undefined' && window.innerWidth < 1024 && setIsOpen(false)}
+                    className={cn(
+                      "relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-medium",
+                      "transition-all duration-150",
+                      isActive
+                        ? [
+                          "text-white bg-white/[0.08]",
+                          "before:absolute before:left-0 before:inset-y-1.5 before:w-0.5",
+                          "before:rounded-full before:bg-accent before:shadow-[0_0_8px_rgba(212,175,55,0.6)]"
+                        ].join(" ")
+                        : "text-gray-500 hover:bg-white/5 hover:text-gray-200"
+                    )}
+                  >
+                    <item.icon className={cn("h-5 w-5 shrink-0", isOpen && "mr-3")} />
+                    {isOpen && <span>{item.label}</span>}
+                  </Link>
+                </React.Fragment>
               )
             })}
           </nav>
         </div>
 
-        <div className="border-t border-white/10 p-4">
-          <div className="flex flex-col gap-2">
+        {/* Footer */}
+        <div className="border-t border-white/5 p-3">
+          <div className="flex flex-col gap-0.5">
             <button
               onClick={toggleTheme}
+              title={!isOpen ? (isDark ? "Modo Claro" : "Modo Escuro") : undefined}
               className={cn(
-                "flex items-center rounded-xl px-3 py-3 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-colors",
+                "flex items-center rounded-xl px-3 py-2.5 text-sm font-medium text-gray-500 hover:bg-white/5 hover:text-gray-200 transition-all duration-150",
                 !isOpen && "justify-center"
               )}
             >
@@ -147,8 +185,9 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v:
             </button>
             <button
               onClick={handleLogout}
+              title={!isOpen ? "Sair" : undefined}
               className={cn(
-                "flex items-center rounded-xl px-3 py-3 text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors",
+                "flex items-center rounded-xl px-3 py-2.5 text-sm font-medium text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-all duration-150",
                 !isOpen && "justify-center"
               )}
             >

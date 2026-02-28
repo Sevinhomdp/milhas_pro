@@ -3,164 +3,158 @@
 import * as React from 'react'
 import { Cartao } from '@/src/types'
 import { adicionarCartao, removerCartao } from '@/src/app/actions'
-import { PlusCircle, Trash2, Loader2, CreditCard, RefreshCw } from 'lucide-react'
+import { Button } from '../ui/Button'
+import { CreditCard, Plus, Trash2, RefreshCw } from 'lucide-react'
 
-interface CartoesProps {
-    cartoes: Cartao[]
-}
+interface CartoesProps { cartoes: Cartao[] }
+const fmtCur = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export function Cartoes({ cartoes }: CartoesProps) {
-    const [nome, setNome] = React.useState('')
-    const [fechamento, setFechamento] = React.useState('5')
-    const [vencimento, setVencimento] = React.useState('15')
-    const [limite, setLimite] = React.useState('')
+    const [showForm, setShowForm] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
-    const [error, setError] = React.useState<string | null>(null)
-    const [deleting, setDeleting] = React.useState<string | null>(null)
-
-    // C6 Calculator
-    const [gasto, setGasto] = React.useState('')
-    const [dolar, setDolar] = React.useState('5.00')
-    const [loadingDolar, setLoadingDolar] = React.useState(false)
-
-    const pontos = dolar && gasto ? Math.floor((parseFloat(gasto) / parseFloat(dolar)) * 2.5) : 0
-
-    const fetchDolar = async () => {
-        setLoadingDolar(true)
-        try {
-            const res = await fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL')
-            const j = await res.json()
-            setDolar(parseFloat(j.USDBRL.bid).toFixed(2))
-        } catch { } finally { setLoadingDolar(false) }
-    }
+    const [nome, setNome] = React.useState('')
+    const [limite, setLimite] = React.useState('')
+    const [diaVenc, setDiaVenc] = React.useState('10')
+    const [diaFech, setDiaFech] = React.useState('3')
+    const [dolar, setDolar] = React.useState<number | null>(null)
+    const [loadDolar, setLoadDolar] = React.useState(false)
 
     const handleAdd = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setError(null)
-        if (!nome.trim()) { setError('Nome é obrigatório'); return }
-        setLoading(true)
+        e.preventDefault(); setLoading(true)
         try {
-            await adicionarCartao(nome.trim(), parseInt(fechamento), parseInt(vencimento), parseFloat(limite) || 0)
-            setNome(''); setLimite('')
-        } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Erro ao adicionar cartão')
+            await adicionarCartao(
+                nome,
+                parseInt(diaFech) || 3,
+                parseInt(diaVenc) || 10,
+                parseFloat(limite) || 0
+            )
+            setNome(''); setLimite(''); setShowForm(false)
+        } catch (e) {
+            console.error(e)
+            alert(e instanceof Error ? e.message : 'Erro ao adicionar cartão')
         } finally { setLoading(false) }
     }
 
-    const handleRemove = async (id: string, nome: string) => {
-        if (!confirm(`Remover o cartão "${nome}"? Isso pode afetar as faturas em aberto.`)) return
-        setDeleting(id)
-        try { await removerCartao(id) }
-        catch (e) { console.error(e) } finally { setDeleting(null) }
+    const handleDelete = async (id: string, nome: string) => {
+        if (!window.confirm(`Excluir ${nome}?`)) return
+        try {
+            await removerCartao(id)
+        } catch (e) {
+            console.error(e)
+            alert(e instanceof Error ? e.message : 'Erro ao remover cartão')
+        }
     }
 
-    const inputClass = 'w-full p-3 bg-bgDark border border-borderDark rounded-lg text-white text-sm focus:outline-none focus:border-accent'
+    const fetchDolar = async () => {
+        setLoadDolar(true)
+        try {
+            const r = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL')
+            const d = await r.json()
+            setDolar(parseFloat(d.USDBRL.ask))
+        } catch {
+            setDolar(null)
+        } finally {
+            setLoadDolar(false)
+        }
+    }
+
+    const inputCls = 'flex h-11 w-full rounded-xl px-3.5 py-2.5 text-sm font-medium bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-borderDark text-gray-900 dark:text-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-150 tabular'
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-1">
-                <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2"><CreditCard className="text-accent w-6 h-6" /> Meus Cartões</h1>
-                <p className="text-sm text-gray-400">Gerencie seus cartões para controle de faturas e parcelas.</p>
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div>
+                    <p className="field-label mb-1">Gestão</p>
+                    <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
+                        <CreditCard className="text-accent w-7 h-7" /> Cartões
+                    </h1>
+                </div>
+                <Button
+                    variant={showForm ? 'secondary' : 'primary'}
+                    onClick={() => setShowForm(!showForm)}
+                    icon={<Plus className="w-4 h-4" />}
+                >
+                    {showForm ? 'Cancelar' : 'Novo Cartão'}
+                </Button>
             </div>
 
-            {/* Add Form */}
-            <div className="bg-surfaceDark p-5 rounded-2xl border border-borderDark">
-                <h2 className="text-accent font-semibold text-sm mb-4 uppercase tracking-widest flex items-center gap-2">
-                    <PlusCircle className="w-4 h-4" /> Adicionar Cartão
-                </h2>
-                <form onSubmit={handleAdd}>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="lg:col-span-2">
-                            <label className="block text-xs font-semibold text-gray-400 mb-1">Nome do Cartão *</label>
-                            <input value={nome} onChange={e => setNome(e.target.value)} className={inputClass} placeholder="Ex: Nubank Ultravioleta" required />
+            {showForm && (
+                <div className="card p-6 animate-fadeInUp">
+                    <h2 className="field-label mb-4">Adicionar Cartão</h2>
+                    <form onSubmit={handleAdd}>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label className="field-label">Nome</label>
+                                <input value={nome} onChange={e => setNome(e.target.value)} className={inputCls} placeholder="C6 Black" required />
+                            </div>
+                            <div>
+                                <label className="field-label">Dia Fechamento</label>
+                                <input type="number" value={diaFech} onChange={e => setDiaFech(e.target.value)} className={inputCls} min="1" max="31" required />
+                            </div>
+                            <div>
+                                <label className="field-label">Dia Vencimento</label>
+                                <input type="number" value={diaVenc} onChange={e => setDiaVenc(e.target.value)} className={inputCls} min="1" max="31" required />
+                            </div>
+                            <div>
+                                <label className="field-label">Limite (R$)</label>
+                                <input type="number" value={limite} onChange={e => setLimite(e.target.value)} className={inputCls} step="0.01" placeholder="0.00" required />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-400 mb-1">Dia Fechamento *</label>
-                            <input type="number" value={fechamento} onChange={e => setFechamento(e.target.value)} className={inputClass} min="1" max="31" required />
+                        <div className="mt-5">
+                            <Button variant="primary" size="lg" loading={loading} type="submit">
+                                Salvar Cartão
+                            </Button>
                         </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-400 mb-1">Dia Vencimento *</label>
-                            <input type="number" value={vencimento} onChange={e => setVencimento(e.target.value)} className={inputClass} min="1" max="31" required />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-gray-400 mb-1">Limite (R$)</label>
-                            <input type="number" value={limite} onChange={e => setLimite(e.target.value)} className={inputClass} step="0.01" min="0" placeholder="0.00" />
-                        </div>
-                    </div>
-                    {error && <p className="text-danger text-sm mt-2">{error}</p>}
-                    <button disabled={loading} type="submit" className="mt-4 bg-accent text-primary font-bold px-6 py-3 rounded-lg hover:opacity-90 flex items-center gap-2 disabled:opacity-50">
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
-                        Adicionar
-                    </button>
-                </form>
-            </div>
-
-            {/* Cartões list */}
-            {cartoes.length === 0 ? (
-                <div className="bg-surfaceDark rounded-2xl border border-borderDark p-10 text-center text-gray-500">Nenhum cartão cadastrado ainda.</div>
-            ) : (
-                <div className="bg-surfaceDark rounded-2xl border border-borderDark overflow-hidden">
-                    <div className="p-5 border-b border-borderDark">
-                        <h2 className="text-white font-semibold">Cartões Cadastrados</h2>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-bgDark/50 text-[11px] uppercase tracking-wider text-gray-400 border-b border-borderDark">
-                                    <th className="px-5 py-3 text-left">Nome</th>
-                                    <th className="px-5 py-3 text-left">Fechamento</th>
-                                    <th className="px-5 py-3 text-left">Vencimento</th>
-                                    <th className="px-5 py-3 text-left">Limite</th>
-                                    <th className="px-5 py-3 text-right">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {cartoes.map(c => (
-                                    <tr key={c.id} className="border-b border-borderDark/50 hover:bg-white/5 transition-colors">
-                                        <td className="px-5 py-4 font-medium text-white">{c.nome}</td>
-                                        <td className="px-5 py-4 text-gray-300">Dia {c.dia_fechamento}</td>
-                                        <td className="px-5 py-4 text-gray-300">Dia {c.dia_vencimento}</td>
-                                        <td className="px-5 py-4 text-gray-300">{Number(c.limite).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                                        <td className="px-5 py-4 text-right">
-                                            <button
-                                                onClick={() => handleRemove(c.id, c.nome)}
-                                                disabled={deleting === c.id}
-                                                className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg bg-danger/10 text-danger hover:bg-danger/20 transition-colors disabled:opacity-50"
-                                            >
-                                                {deleting === c.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                                                Remover
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    </form>
                 </div>
             )}
 
-            {/* C6 Black Calculator */}
-            <div className="bg-surfaceDark p-5 rounded-2xl border border-borderDark">
-                <h2 className="text-white font-bold mb-4 uppercase tracking-wider text-sm">🖤 Calculadora C6 Black</h2>
-                <p className="text-xs text-gray-400 mb-4">Calcule os pontos gerados com gastos no cartão C6 Black (2.5 pontos por dólar).</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-400 mb-1">Valor do Gasto (R$)</label>
-                        <input type="number" value={gasto} onChange={e => setGasto(e.target.value)} className={inputClass} placeholder="0.00" min="0" step="0.01" />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-semibold text-gray-400 mb-1">Cotação do Dólar (R$)</label>
-                        <div className="flex gap-2">
-                            <input type="number" value={dolar} onChange={e => setDolar(e.target.value)} className={inputClass} step="0.01" min="0" />
-                            <button onClick={fetchDolar} disabled={loadingDolar} className="p-3 bg-bgDark border border-borderDark rounded-lg text-gray-400 hover:text-accent transition-colors shrink-0" title="Buscar cotação atual">
-                                <RefreshCw className={`w-4 h-4 ${loadingDolar ? 'animate-spin' : ''}`} />
-                            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
+                {cartoes.map((c, i) => (
+                    <div key={c.id} className="card card-hover p-5 animate-fadeInUp" style={{ animationDelay: `${i * 60}ms` }}>
+                        <div className="flex justify-between items-start mb-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="p-2 rounded-xl bg-accent/10"><CreditCard className="w-4 h-4 text-accent" /></div>
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">{c.nome}</h3>
+                                    <p className="text-[11px] text-gray-500">Limite: {fmtCur(Number(c.limite))}</p>
+                                </div>
+                            </div>
+                            <Button variant="danger" size="sm" onClick={() => handleDelete(c.id, c.nome)} icon={<Trash2 className="w-3 h-3" />} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mt-4 border-t border-gray-50 dark:border-white/5 pt-3">
+                            <div>
+                                <p className="field-label mb-0">Fechamento</p>
+                                <p className="text-sm font-black text-gray-900 dark:text-white tabular mt-0.5">Dia {c.dia_fechamento}</p>
+                            </div>
+                            <div>
+                                <p className="field-label mb-0">Vencimento</p>
+                                <p className="text-sm font-black text-gray-900 dark:text-white tabular mt-0.5">Dia {c.dia_vencimento}</p>
+                            </div>
                         </div>
                     </div>
-                    <div className="text-center p-4 bg-bgDark rounded-xl border border-accent/30">
-                        <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Pontos Gerados</p>
-                        <p className="text-3xl font-black text-accent">{pontos.toLocaleString('pt-BR')}</p>
-                    </div>
+                ))}
+                {cartoes.length === 0 && <p className="text-gray-500 text-sm col-span-3 text-center py-8">Nenhum cartão cadastrado.</p>}
+            </div>
+
+            <div className="card p-6">
+                <h2 className="field-label mb-4">🏦 Calculadora C6 Black (Pontos/Dólar)</h2>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <Button variant="secondary" onClick={fetchDolar} loading={loadDolar} icon={<RefreshCw className="w-4 h-4" />}>
+                        Buscar Cotação
+                    </Button>
+                    {dolar && (
+                        <div className="flex items-center gap-4">
+                            <div>
+                                <span className="field-label mb-0">USD/BRL:</span>
+                                <span className="text-sm font-black text-accent tabular ml-1.5">R${dolar.toFixed(4)}</span>
+                            </div>
+                            <div>
+                                <span className="field-label mb-0">Pontos/USD (2.5x):</span>
+                                <span className="text-sm font-black text-success tabular ml-1.5">{(dolar * 2.5).toFixed(2)}</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

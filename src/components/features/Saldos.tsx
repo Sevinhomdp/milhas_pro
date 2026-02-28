@@ -3,113 +3,69 @@
 import * as React from 'react'
 import { ProgramaSaldo } from '@/src/types'
 import { atualizarSaldo } from '@/src/app/actions'
-import { CheckCircle2, Loader2, Save, Wallet } from 'lucide-react'
+import { Button } from '../ui/Button'
+import { Wallet, Save } from 'lucide-react'
 
-const PROGS = ['Livelo', 'Esfera', 'Átomos', 'Smiles', 'Azul', 'LATAM', 'Inter', 'Itaú']
-
-interface SaldosProps {
-    saldos: ProgramaSaldo[]
-}
+interface SaldosProps { saldos: ProgramaSaldo[] }
+const fmtCur = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+const fmtNum = (v: number) => Math.floor(v).toLocaleString('pt-BR')
 
 export function Saldos({ saldos }: SaldosProps) {
-    const saldoMap = React.useMemo(() => {
-        const m: Record<string, ProgramaSaldo> = {}
-        saldos.forEach(s => { m[s.nome_programa] = s })
-        return m
-    }, [saldos])
-
-    const [valores, setValores] = React.useState<Record<string, string>>(() => {
-        const init: Record<string, string> = {}
-        const progs = [...new Set([...PROGS, ...saldos.map(s => s.nome_programa)])]
-        progs.forEach(p => { init[p] = String(saldoMap[p]?.saldo_atual || '') })
-        return init
-    })
+    const [editValues, setEditValues] = React.useState<Record<string, string>>({})
     const [saving, setSaving] = React.useState<string | null>(null)
-    const [synced, setSynced] = React.useState<string | null>(null)
 
-    const handleSave = async (prog: string) => {
-        const novo = parseFloat(valores[prog]) || 0
-        const atual = Number(saldoMap[prog]?.saldo_atual) || 0
-        if (novo === atual) return
-        setSaving(prog)
-        try {
-            await atualizarSaldo(prog, novo)
-            setSynced(prog)
-            setTimeout(() => setSynced(null), 2000)
-        } catch (e) { console.error(e) } finally { setSaving(null) }
+    const totalMilhas = saldos.reduce((a, s) => a + Number(s.saldo_atual), 0)
+    const patrimonio = saldos.reduce((a, s) => a + (Number(s.saldo_atual) * Number(s.custo_medio || 0)) / 1000, 0)
+
+    const handleSave = async (s: ProgramaSaldo) => {
+        const novoSaldo = parseFloat(editValues[s.id] ?? '') || Number(s.saldo_atual)
+        setSaving(s.id)
+        try { await atualizarSaldo(s.id, novoSaldo) } catch (e) { console.error(e) } finally { setSaving(null) }
     }
 
-    const allProgs = [...new Set([...PROGS, ...saldos.map(s => s.nome_programa)])]
-    const totalMilhas = allProgs.reduce((a, p) => a + (Number(saldoMap[p]?.saldo_atual) || 0), 0)
-    const patrimonio = allProgs.reduce((a, p) => {
-        const s = saldoMap[p]
-        return a + (Number(s?.saldo_atual) || 0) * (Number(s?.custo_medio) || 0) / 1000
-    }, 0)
+    const inputCls = 'flex h-11 w-full rounded-xl px-3.5 py-2.5 text-sm font-medium bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-borderDark text-gray-900 dark:text-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-150 tabular'
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-1">
-                <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                    <Wallet className="text-accent w-6 h-6" /> Minha Carteira
-                </h1>
-                <p className="text-sm text-gray-400">Atualize os saldos das suas contas de fidelidade.</p>
-            </div>
+            <div><p className="field-label mb-1">Saldos</p><h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">Portfólio de Milhas</h1><p className="text-sm text-gray-400 mt-1">Gerencie os saldos de cada programa.</p></div>
 
-            {/* Summary Panel */}
-            <div className="bg-gradient-to-r from-primary to-surfaceDark rounded-2xl p-6 border border-borderDark flex flex-col sm:flex-row gap-6 justify-between">
-                <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Total de Milhas</p>
-                    <p className="text-3xl font-bold text-accent">{Math.floor(totalMilhas).toLocaleString('pt-BR')}</p>
+            {/* Summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 stagger-children">
+                <div className="card card-hover p-5 border-l-4 border-l-accent animate-fadeInUp">
+                    <p className="field-label mb-0">Total em Milhas</p>
+                    <p className="text-3xl font-black text-gray-900 dark:text-white tabular mt-2">{fmtNum(totalMilhas)}</p>
+                    <p className="text-xs text-gray-500 mt-1">milhas em todos os programas</p>
                 </div>
-                <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Patrimônio Estimado</p>
-                    <p className="text-3xl font-bold text-white">{patrimonio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                    <p className="text-xs text-gray-500 mt-1">Baseado no custo médio de cada programa</p>
+                <div className="card card-hover p-5 border-l-4 border-l-blue-500 animate-fadeInUp" style={{ animationDelay: '60ms' }}>
+                    <p className="field-label mb-0">Patrimônio Estimado</p>
+                    <div className="flex items-baseline gap-1.5 mt-2"><span className="text-sm font-medium text-gray-400">R$</span><span className="text-3xl font-black text-gray-900 dark:text-white tabular">{patrimonio.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span></div>
+                    <p className="text-xs text-gray-500 mt-1">baseado no custo médio/mil</p>
                 </div>
             </div>
 
-            {/* Cards por programa */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
-                {allProgs.map(prog => {
-                    const s = saldoMap[prog]
-                    const custoMedio = Number(s?.custo_medio) || 0
-                    return (
-                        <div key={prog} className="bg-surfaceDark rounded-xl p-4 border border-borderDark border-t-4 border-t-accent shadow-md">
-                            <h3 className="text-[11px] text-gray-400 uppercase tracking-widest mb-3 font-semibold">{prog}</h3>
-
-                            <div className="flex gap-2 items-center mb-2">
-                                <input
-                                    type="number"
-                                    value={valores[prog] ?? ''}
-                                    placeholder="0"
-                                    onChange={e => setValores(prev => ({ ...prev, [prog]: e.target.value }))}
-                                    onBlur={() => handleSave(prog)}
-                                    className="w-full bg-bgDark border border-borderDark rounded-lg p-2 text-white text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-                                />
-                                <button
-                                    onClick={() => handleSave(prog)}
-                                    disabled={saving === prog}
-                                    className="p-2 text-gray-400 hover:text-accent disabled:opacity-30 transition-colors bg-bgDark rounded-lg border border-borderDark shrink-0"
-                                    title="Salvar"
-                                >
-                                    {saving === prog ? <Loader2 className="w-4 h-4 animate-spin" /> :
-                                        synced === prog ? <CheckCircle2 className="w-4 h-4 text-success" /> :
-                                            <Save className="w-4 h-4" />}
-                                </button>
-                            </div>
-
-                            <div className="text-[11px] text-gray-500 mt-1">
-                                {(parseFloat(valores[prog]) || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} milhas
-                            </div>
-
-                            {custoMedio > 0 && (
-                                <div className="text-[11px] text-success mt-0.5 font-semibold">
-                                    CPM: R${custoMedio.toFixed(2)}/mil
+            {/* Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
+                {saldos.map((s, i) => (
+                    <div key={s.id} className="card card-hover p-5 animate-fadeInUp" style={{ animationDelay: `${i * 60}ms` }}>
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="flex items-center gap-2.5">
+                                <div className="p-2 rounded-xl bg-accent/10"><Wallet className="w-4 h-4 text-accent" /></div>
+                                <div>
+                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">{s.nome_programa}</h3>
+                                    <p className="text-[11px] text-gray-500 tabular">{Number(s.custo_medio) > 0 ? `Custo: R$${Number(s.custo_medio).toFixed(2)}/mil` : 'Sem custo médio'}</p>
                                 </div>
-                            )}
+                            </div>
                         </div>
-                    )
-                })}
+                        <div>
+                            <label className="field-label">Saldo Atual</label>
+                            <div className="flex gap-2">
+                                <input type="number" defaultValue={Math.floor(Number(s.saldo_atual))} onChange={e => setEditValues(p => ({ ...p, [s.id]: e.target.value }))} className={inputCls} />
+                                <Button variant="primary" size="md" loading={saving === s.id} onClick={() => handleSave(s)} icon={<Save className="w-4 h-4" />} />
+                            </div>
+                        </div>
+                    </div>
+                ))}
+                {saldos.length === 0 && <p className="text-gray-500 text-sm col-span-3 text-center py-8">Nenhum saldo. Faça uma compra para iniciar.</p>}
             </div>
         </div>
     )
