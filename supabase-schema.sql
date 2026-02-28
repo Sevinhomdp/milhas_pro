@@ -1,125 +1,105 @@
--- profiles: gerado automaticamente via trigger após auth.users
-CREATE TABLE profiles (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
-  nome text,
-  avatar_url text,
-  plano text DEFAULT 'free', -- 'free' | 'pro'
-  created_at timestamptz DEFAULT now()
+-- Habilitar a extensão UUID
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Criar tabela de cartões
+CREATE TABLE IF NOT EXISTS public.cartoes (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    nome TEXT NOT NULL,
+    dia_fechamento INTEGER NOT NULL,
+    dia_vencimento INTEGER NOT NULL,
+    limite NUMERIC(10, 2) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- programas_saldos: saldo de milhas por programa
-CREATE TABLE programas_saldos (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  nome_programa text NOT NULL,
-  saldo_atual numeric DEFAULT 0,
-  custo_medio numeric DEFAULT 0, -- R$/mil (custo médio ponderado)
-  updated_at timestamptz DEFAULT now(),
-  UNIQUE(user_id, nome_programa)
+-- Criar tabela de programas_saldos
+CREATE TABLE IF NOT EXISTS public.programas_saldos (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    nome_programa TEXT NOT NULL,
+    saldo_atual NUMERIC(15, 2) DEFAULT 0 NOT NULL,
+    custo_medio NUMERIC(10, 4) DEFAULT 0 NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(user_id, nome_programa)
 );
 
--- cartoes: cartões de crédito do usuário
-CREATE TABLE cartoes (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  nome text NOT NULL,
-  dia_fechamento integer CHECK (dia_fechamento BETWEEN 1 AND 31),
-  dia_vencimento integer CHECK (dia_vencimento BETWEEN 1 AND 31),
-  limite numeric DEFAULT 0,
-  created_at timestamptz DEFAULT now()
+-- Criar tabela de operacoes
+CREATE TABLE IF NOT EXISTS public.operacoes (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    tipo TEXT NOT NULL CHECK (tipo IN ('COMPRA', 'VENDA', 'TRANSF')),
+    data DATE NOT NULL,
+    programa TEXT NOT NULL,
+    quantidade NUMERIC(15, 2) NOT NULL,
+    valor_total NUMERIC(15, 2) NOT NULL,
+    cpm NUMERIC(10, 4),
+    roi NUMERIC(10, 2),
+    cartao_id UUID REFERENCES public.cartoes(id) ON DELETE SET NULL,
+    status_recebimento TEXT CHECK (status_recebimento IN ('pendente', 'recebido')),
+    data_recebimento DATE,
+    observacao TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- operacoes: histórico de compras, vendas e transferências
-CREATE TABLE operacoes (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  data date NOT NULL,
-  tipo text CHECK (tipo IN ('COMPRA','VENDA','TRANSF')),
-  programa text NOT NULL,
-  quantidade numeric NOT NULL,
-  valor_total numeric NOT NULL,
-  cpm numeric,       -- calculado: (valor/qtd)*1000
-  roi numeric,       -- calculado na venda
-  status_recebimento text DEFAULT 'recebido' CHECK (status_recebimento IN ('pendente','recebido')),
-  data_recebimento date,
-  cartao_id uuid REFERENCES cartoes(id) ON DELETE SET NULL,
-  observacao text,
-  created_at timestamptz DEFAULT now()
+-- Criar tabela de faturas_parcelas
+CREATE TABLE IF NOT EXISTS public.faturas_parcelas (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    operacao_id UUID NOT NULL REFERENCES public.operacoes(id) ON DELETE CASCADE,
+    cartao_id UUID NOT NULL REFERENCES public.cartoes(id) ON DELETE CASCADE,
+    valor NUMERIC(10, 2) NOT NULL,
+    mes_referencia TEXT NOT NULL, -- Formato: YYYY-MM
+    parc_num INTEGER NOT NULL,
+    total_parc INTEGER NOT NULL,
+    pago BOOLEAN DEFAULT false NOT NULL,
+    data_pagamento DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- faturas_parcelas: parcelas geradas por compra parcelada
-CREATE TABLE faturas_parcelas (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  operacao_id uuid REFERENCES operacoes(id) ON DELETE CASCADE,
-  cartao_id uuid REFERENCES cartoes(id) ON DELETE CASCADE,
-  valor numeric NOT NULL,
-  mes_referencia text NOT NULL, -- 'YYYY-MM'
-  parc_num integer,
-  total_parc integer,
-  pago boolean DEFAULT false,
-  data_pagamento date,
-  created_at timestamptz DEFAULT now()
+-- Criar tabela de metas
+CREATE TABLE IF NOT EXISTS public.metas (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    mes TEXT NOT NULL, -- Formato: YYYY-MM
+    meta_lucro NUMERIC(10, 2) NOT NULL,
+    meta_volume_milhas NUMERIC(15, 2) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(user_id, mes)
 );
 
--- metas: metas mensais de resultado
-CREATE TABLE metas (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  mes text NOT NULL, -- 'YYYY-MM'
-  meta_lucro numeric DEFAULT 0,
-  meta_volume_milhas numeric DEFAULT 0,
-  UNIQUE(user_id, mes)
-);
+-- Configurar Row Level Security (RLS)
+ALTER TABLE public.cartoes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.programas_saldos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.operacoes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.faturas_parcelas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.metas ENABLE ROW LEVEL SECURITY;
 
--- Row Level Security (RLS)
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE programas_saldos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE cartoes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE operacoes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE faturas_parcelas ENABLE ROW LEVEL SECURITY;
-ALTER TABLE metas ENABLE ROW LEVEL SECURITY;
+-- Políticas para cartoes
+CREATE POLICY "Usuários podem ver seus próprios cartões" ON public.cartoes FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Usuários podem inserir seus próprios cartões" ON public.cartoes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Usuários podem atualizar seus próprios cartões" ON public.cartoes FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Usuários podem deletar seus próprios cartões" ON public.cartoes FOR DELETE USING (auth.uid() = user_id);
 
--- RLS Policies
-CREATE POLICY "Users can view own profile" ON profiles FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = user_id);
+-- Políticas para programas_saldos
+CREATE POLICY "Usuários podem ver seus próprios saldos" ON public.programas_saldos FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Usuários podem inserir seus próprios saldos" ON public.programas_saldos FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Usuários podem atualizar seus próprios saldos" ON public.programas_saldos FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Usuários podem deletar seus próprios saldos" ON public.programas_saldos FOR DELETE USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can view own programas_saldos" ON programas_saldos FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own programas_saldos" ON programas_saldos FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own programas_saldos" ON programas_saldos FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own programas_saldos" ON programas_saldos FOR DELETE USING (auth.uid() = user_id);
+-- Políticas para operacoes
+CREATE POLICY "Usuários podem ver suas próprias operações" ON public.operacoes FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Usuários podem inserir suas próprias operações" ON public.operacoes FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Usuários podem atualizar suas próprias operações" ON public.operacoes FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Usuários podem deletar suas próprias operações" ON public.operacoes FOR DELETE USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can view own cartoes" ON cartoes FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own cartoes" ON cartoes FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own cartoes" ON cartoes FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own cartoes" ON cartoes FOR DELETE USING (auth.uid() = user_id);
+-- Políticas para faturas_parcelas
+CREATE POLICY "Usuários podem ver suas próprias faturas" ON public.faturas_parcelas FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Usuários podem inserir suas próprias faturas" ON public.faturas_parcelas FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Usuários podem atualizar suas próprias faturas" ON public.faturas_parcelas FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Usuários podem deletar suas próprias faturas" ON public.faturas_parcelas FOR DELETE USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can view own operacoes" ON operacoes FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own operacoes" ON operacoes FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own operacoes" ON operacoes FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own operacoes" ON operacoes FOR DELETE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can view own faturas_parcelas" ON faturas_parcelas FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own faturas_parcelas" ON faturas_parcelas FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own faturas_parcelas" ON faturas_parcelas FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own faturas_parcelas" ON faturas_parcelas FOR DELETE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can view own metas" ON metas FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own metas" ON metas FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own metas" ON metas FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own metas" ON metas FOR DELETE USING (auth.uid() = user_id);
-
--- Trigger de Profile
-CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO profiles (user_id, nome)
-  VALUES (new.id, new.raw_user_meta_data->>'nome');
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE handle_new_user();
+-- Políticas para metas
+CREATE POLICY "Usuários podem ver suas próprias metas" ON public.metas FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Usuários podem inserir suas próprias metas" ON public.metas FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Usuários podem atualizar suas próprias metas" ON public.metas FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Usuários podem deletar suas próprias metas" ON public.metas FOR DELETE USING (auth.uid() = user_id);

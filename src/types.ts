@@ -1,22 +1,4 @@
-export type Profile = {
-  id: string;
-  user_id: string;
-  nome: string | null;
-  avatar_url: string | null;
-  plano: 'free' | 'pro';
-  created_at: string;
-};
-
-export type ProgramaSaldo = {
-  id: string;
-  user_id: string;
-  nome_programa: string;
-  saldo_atual: number;
-  custo_medio: number;
-  updated_at: string;
-};
-
-export type Cartao = {
+export interface Cartao {
   id: string;
   user_id: string;
   nome: string;
@@ -24,26 +6,35 @@ export type Cartao = {
   dia_vencimento: number;
   limite: number;
   created_at: string;
-};
+}
 
-export type Operacao = {
+export interface ProgramaSaldo {
   id: string;
   user_id: string;
-  data: string;
+  nome_programa: string;
+  saldo_atual: number;
+  custo_medio: number;
+  updated_at: string;
+}
+
+export interface Operacao {
+  id: string;
+  user_id: string;
   tipo: 'COMPRA' | 'VENDA' | 'TRANSF';
+  data: string;
   programa: string;
   quantidade: number;
   valor_total: number;
   cpm: number | null;
   roi: number | null;
-  status_recebimento: 'pendente' | 'recebido';
-  data_recebimento: string | null;
   cartao_id: string | null;
+  status_recebimento: 'pendente' | 'recebido' | null;
+  data_recebimento: string | null;
   observacao: string | null;
   created_at: string;
-};
+}
 
-export type FaturaParcela = {
+export interface FaturaParcela {
   id: string;
   user_id: string;
   operacao_id: string;
@@ -55,12 +46,13 @@ export type FaturaParcela = {
   pago: boolean;
   data_pagamento: string | null;
   created_at: string;
-};
+}
 
-export type Meta = {
+export interface Meta {
   id: string;
   user_id: string;
   mes: string;
   meta_lucro: number;
   meta_volume_milhas: number;
-};
+  created_at: string;
+}
