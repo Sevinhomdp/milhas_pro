@@ -1,16 +1,18 @@
 import { createClient } from '@/src/lib/supabase/server'
+import { Metas } from '@/src/components/features/Metas'
 
 export default async function MetasPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: metas } = await supabase.from('metas').select('*').eq('user_id', user.id)
+  const [
+    { data: metas },
+    { data: operacoes }
+  ] = await Promise.all([
+    supabase.from('metas').select('*').eq('user_id', user.id),
+    supabase.from('operacoes').select('*').eq('user_id', user.id).in('tipo', ['VENDA', 'TRANSF'])
+  ])
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Metas</h1>
-      <pre>{JSON.stringify(metas, null, 2)}</pre>
-    </div>
-  )
+  return <Metas metas={metas || []} operacoes={operacoes || []} />
 }

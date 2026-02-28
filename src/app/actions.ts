@@ -3,6 +3,7 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { addMonths, format } from 'date-fns'
+import { cookies } from 'next/headers'
 
 export async function executarAcao(formData: FormData) {
   const supabase = await createClient()
@@ -205,7 +206,7 @@ export async function executarAcao(formData: FormData) {
     const saldoD = saldoDestino?.saldo_atual || 0
     const custoMedioD = saldoDestino?.custo_medio || 0
     const novoSaldoD = saldoD + milhas_destino
-    
+
     // Custo das milhas transferidas = (custo das milhas na origem) + taxas
     const custoTransferido = (quantidade * custoMedioO / 1000) + valor_total
     const novoCustoMedioD = ((saldoD * custoMedioD) + custoTransferido) / novoSaldoD
@@ -336,4 +337,9 @@ export async function salvarMeta(mes: string, metaLucro: number, metaVolume: num
   if (error) throw error
   revalidatePath('/metas')
   revalidatePath('/')
+}
+
+export async function setThemeCookie(theme: 'light' | 'dark') {
+  const cookieStore = await cookies()
+  cookieStore.set('theme', theme, { path: '/', maxAge: 60 * 60 * 24 * 365 })
 }

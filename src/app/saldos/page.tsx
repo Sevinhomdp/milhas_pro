@@ -1,4 +1,5 @@
 import { createClient } from '@/src/lib/supabase/server'
+import { Saldos } from '@/src/components/features/Saldos'
 
 export default async function SaldosPage() {
   const supabase = await createClient()
@@ -7,10 +8,5 @@ export default async function SaldosPage() {
 
   const { data: saldos } = await supabase.from('programas_saldos').select('*').eq('user_id', user.id)
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Saldos</h1>
-      <pre>{JSON.stringify(saldos, null, 2)}</pre>
-    </div>
-  )
+  return <Saldos saldos={saldos || []} />
 }
