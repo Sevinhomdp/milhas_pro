@@ -1,6 +1,6 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Cartoes from '@/src/components/features/Cartoes'
+import { CartoesRoute } from '@/src/components/routes/CartoesRoute'
 
 export default async function CartoesPage() {
   const supabase = await createClient()
@@ -26,6 +26,6 @@ export default async function CartoesPage() {
     user_alerts: []
   }
 
-  return <Cartoes db={db as any} toast={() => { }} />
+  return <CartoesRoute db={db as any} />
 }
 

@@ -1,6 +1,6 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Inteligencia from '@/src/components/features/Inteligencia'
+import { InteligenciaRoute } from '@/src/components/routes/InteligenciaRoute'
 import { Database } from '@/src/types'
 
 export default async function InteligenciaPage() {
@@ -57,7 +57,7 @@ export default async function InteligenciaPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <Inteligencia db={db as Database} toast={() => {}} theme="dark" />
+      <InteligenciaRoute db={db as Database} />
     </div>
   )
 }

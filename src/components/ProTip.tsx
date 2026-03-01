@@ -101,8 +101,12 @@ export default function ProTip({ view }: ProTipProps) {
     // Nova dica aleatória ao trocar de aba
     useEffect(() => {
         const t = TIPS[view] || DEFAULT_TIPS
-        setCurrentTip(t[Math.floor(Math.random() * t.length)])
-        setVisible(true)
+        const timer = window.setTimeout(() => {
+            setCurrentTip(t[Math.floor(Math.random() * t.length)])
+            setVisible(true)
+        }, 0)
+
+        return () => window.clearTimeout(timer)
     }, [view])
 
     const shuffle = useCallback(() => {

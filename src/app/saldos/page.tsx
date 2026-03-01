@@ -1,6 +1,6 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Saldos from '@/src/components/features/Saldos'
+import { SaldosRoute } from '@/src/components/routes/SaldosRoute'
 
 export default async function SaldosPage() {
   const supabase = await createClient()
@@ -37,5 +37,5 @@ export default async function SaldosPage() {
     user_alerts: []
   }
 
-  return <Saldos db={db as any} toast={() => { }} theme="dark" />
+  return <SaldosRoute db={db as any} />
 }
