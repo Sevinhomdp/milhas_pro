@@ -1,12 +1,11 @@
 diff --git a/src/app/saldos/page.tsx b/src/app/saldos/page.tsx
-index d0281d55757b60588e18141198b84006cd42f8e5..908ac05627a691c5372598957bd57141d47c6f60 100644
+index d0281d55757b60588e18141198b84006cd42f8e5..65b308661ce64e1594de7b99c0706e59a0b2dba5 100644
 --- a/src/app/saldos/page.tsx
 +++ b/src/app/saldos/page.tsx
-@@ -1,41 +1,42 @@
+@@ -1,41 +1,41 @@
  import { createClient } from '@/src/lib/supabase/server'
  import { redirect } from 'next/navigation'
 -import Saldos from '@/src/components/features/Saldos'
-+import { Database } from '@/src/types'
 +import { SaldosRoute } from '@/src/components/routes/SaldosRoute'
  
  export default async function SaldosPage() {
@@ -31,8 +30,7 @@ index d0281d55757b60588e18141198b84006cd42f8e5..908ac05627a691c5372598957bd57141
      custo_medio: Number(s.custo_medio) || 0,
    }))
  
--  const db = {
-+  const db: Database = {
+   const db = {
      programs: programs || [],
      saldos: formattedSaldos,
      profile: null,
@@ -46,5 +44,5 @@ index d0281d55757b60588e18141198b84006cd42f8e5..908ac05627a691c5372598957bd57141
    }
  
 -  return <Saldos db={db as any} toast={() => { }} theme="dark" />
-+  return <SaldosRoute db={db} />
++  return <SaldosRoute db={db as any} />
  }

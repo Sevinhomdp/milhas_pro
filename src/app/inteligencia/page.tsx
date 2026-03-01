@@ -1,8 +1,8 @@
 diff --git a/src/app/inteligencia/page.tsx b/src/app/inteligencia/page.tsx
-index a660f1ac700754e40ac8c8ad027cc13122b0e5b1..4767bd556892d1a62f25637362a8b2025d5df95a 100644
+index a660f1ac700754e40ac8c8ad027cc13122b0e5b1..6f867a0a2e1305ec0d49d6b4e31f7ecb6ce02bb0 100644
 --- a/src/app/inteligencia/page.tsx
 +++ b/src/app/inteligencia/page.tsx
-@@ -1,63 +1,63 @@
+@@ -1,28 +1,28 @@
  import { createClient } from '@/src/lib/supabase/server'
  import { redirect } from 'next/navigation'
 -import Inteligencia from '@/src/components/features/Inteligencia'
@@ -32,12 +32,7 @@ index a660f1ac700754e40ac8c8ad027cc13122b0e5b1..4767bd556892d1a62f25637362a8b202
        .from('market_news')
        .select('*')
        .eq('ativa', true)
-       .order('data_publicacao', { ascending: false }),
-     supabase
-       .from('user_alerts')
-       .select('*')
-       .eq('user_id', user.id),
-   ])
+@@ -35,29 +35,29 @@ export default async function InteligenciaPage() {
  
    const formattedSaldos = (saldos || []).map((s: any) => ({
      program_id: s.program_id,
@@ -48,8 +43,7 @@ index a660f1ac700754e40ac8c8ad027cc13122b0e5b1..4767bd556892d1a62f25637362a8b202
      custo_medio: Number(s.custo_medio) || 0,
    }))
  
--  const db: Partial<Database> = {
-+  const db: Database = {
+   const db: Partial<Database> = {
      profile: null,
      programs: [],
      saldos: formattedSaldos,
@@ -65,7 +59,7 @@ index a660f1ac700754e40ac8c8ad027cc13122b0e5b1..4767bd556892d1a62f25637362a8b202
    return (
      <div className="p-4 md:p-8">
 -      <Inteligencia db={db as Database} toast={() => {}} theme="dark" />
-+      <InteligenciaRoute db={db} />
++      <InteligenciaRoute db={db as Database} />
      </div>
    )
  }
