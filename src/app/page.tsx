@@ -16,7 +16,10 @@ export default async function Page() {
     { data: operacoes },
     { data: faturas },
     { data: cartoes },
-    { data: metas }
+    { data: metas },
+    { data: historico },
+    { data: promocoes },
+    { data: alertas }
   ] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase.from('programs').select('*'),
@@ -24,7 +27,10 @@ export default async function Page() {
     supabase.from('operacoes').select('*').eq('user_id', user.id).order('date', { ascending: false }),
     supabase.from('faturas_parcelas').select('*').eq('user_id', user.id),
     supabase.from('cartoes').select('*').eq('user_id', user.id),
-    supabase.from('metas').select('*').eq('user_id', user.id)
+    supabase.from('metas').select('*').eq('user_id', user.id),
+    supabase.from('historico_precos').select('*').order('created_at', { ascending: true }),
+    supabase.from('promocoes_radar').select('*').eq('ativa', true).order('data_validade', { ascending: true }),
+    supabase.from('alertas_config').select('*').eq('user_id', user.id)
   ])
 
   const initialDb: Database = {
@@ -34,8 +40,12 @@ export default async function Page() {
     operacoes: operacoes || [],
     faturas: faturas || [],
     cartoes: cartoes || [],
-    metas: metas || []
+    metas: metas || [],
+    historico_precos: historico || [],
+    promocoes_radar: promocoes || [],
+    alertas_config: alertas || []
   }
+
 
 
   return (

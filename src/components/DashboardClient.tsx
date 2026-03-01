@@ -23,6 +23,7 @@ import {
     HelpCircle,
     Moon,
     Sun,
+    Zap,
     LogOut,
     Menu,
     X
@@ -91,8 +92,9 @@ export default function DashboardClient({ initialDb, user }: DashboardClientProp
         { id: 'simulador', label: 'Simulador', icon: Calculator },
         { id: 'cartoes', label: 'Cartões', icon: CreditCard },
         { id: 'metas', label: 'Metas', icon: Target },
-        { id: 'mercado', label: 'Hub de Mercado', icon: ShoppingCart },
+        { id: 'mercado', label: 'Inteligência', icon: Zap },
     ]
+
 
     const supportMenuItems = [
         { id: 'configuracoes', label: 'Configurações', icon: Settings },

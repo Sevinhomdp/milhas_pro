@@ -107,6 +107,41 @@ export interface ProgramaSaldo {
 }
 
 
+export interface HistoricoPreco {
+  id: string;
+  programa: string;
+  plataforma: string;
+  prazo_recebimento: number;
+  valor_milheiro: number;
+  tendencia: 'UP' | 'DOWN' | 'STABLE';
+  created_at: string;
+}
+
+export interface PromocaoRadar {
+  id: string;
+  titulo: string;
+  programa_origem: string | null;
+  programa_destino: string | null;
+  bonus_percentual: number | null;
+  data_validade: string | null;
+  link_oficial: string | null;
+  categoria: 'TRANSFERENCIA' | 'BUMERANGUE' | 'BONIFICADA' | 'COMPRA';
+  ativa: boolean;
+  created_at: string;
+}
+
+export interface AlertaConfig {
+  id: string;
+  user_id: string;
+  tipo_alerta: 'CPM_THRESHOLD' | 'NOVA_PROMO' | 'FATURA_VENCENDO' | 'EXPIRACAO_MILHAS';
+  valor_gatilho: number | null;
+  programas_foco: string[];
+  notificacao_email: boolean;
+  notificacao_push: boolean;
+  ultimo_disparo: string | null;
+  created_at: string;
+}
+
 export interface Database {
   profile: Profile | null;
   programs: Program[];
@@ -115,6 +150,10 @@ export interface Database {
   faturas: FaturaParcela[];
   cartoes: Cartao[];
   metas: Meta[];
+  historico_precos: HistoricoPreco[];
+  promocoes_radar: PromocaoRadar[];
+  alertas_config: AlertaConfig[];
 }
+
 
 
