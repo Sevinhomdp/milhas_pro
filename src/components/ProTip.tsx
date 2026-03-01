@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useEffect } from 'react'
-import { ViewType } from '../types'
+import React, { useState } from 'react'
 import { Zap, X, RefreshCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 
@@ -86,38 +85,45 @@ const DEFAULT_TIPS = [
     { text: 'Exporte seus dados em CSV regularmente para manter um backup pessoal.', tag: 'Backup' },
 ]
 
+
+const hashText = (text: string) => {
+    let hash = 0
+    for (let i = 0; i < text.length; i += 1) {
+        hash = (hash * 31 + text.charCodeAt(i)) | 0
+    }
+    return Math.abs(hash)
+}
+
 interface ProTipProps {
-    view: string // Using string to allow flexible view names
+    view: string
 }
 
 export default function ProTip({ view }: ProTipProps) {
     const tips = TIPS[view] || DEFAULT_TIPS
 
-    const [visible, setVisible] = useState(true)
-    const [currentTip, setCurrentTip] = useState(() =>
-        tips[Math.floor(Math.random() * tips.length)]
-    )
+    const [shuffleSeed, setShuffleSeed] = useState(0)
+    const [hiddenViews, setHiddenViews] = useState<Record<string, boolean>>({})
 
-    // Nova dica aleatória ao trocar de aba
-    useEffect(() => {
-        const t = TIPS[view] || DEFAULT_TIPS
-        setCurrentTip(t[Math.floor(Math.random() * t.length)])
-        setVisible(true)
-    }, [view])
+    const tipIndex = hashText(`${view}:${shuffleSeed}`) % tips.length
+    const currentTip = tips[tipIndex]
 
-    const shuffle = useCallback(() => {
-        const t = TIPS[view] || DEFAULT_TIPS
-        const available = t.filter(tip => tip.text !== currentTip.text)
-        const next = available[Math.floor(Math.random() * available.length)] || t[0]
-        setCurrentTip(next)
-    }, [view, currentTip])
+    const visible = !hiddenViews[view]
+
+    const shuffle = () => {
+        setHiddenViews(prev => ({ ...prev, [view]: false }))
+        setShuffleSeed(prev => prev + 1)
+    }
+
+    const hide = () => {
+        setHiddenViews(prev => ({ ...prev, [view]: true }))
+    }
 
     if (!visible) return null
 
     return (
         <AnimatePresence mode="wait">
             <motion.div
-                key={currentTip.text}
+                key={`${view}-${shuffleSeed}`}
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
@@ -148,7 +154,7 @@ export default function ProTip({ view }: ProTipProps) {
                         <RefreshCw size={11} />
                     </button>
                     <button
-                        onClick={() => setVisible(false)}
+                        onClick={hide}
                         title="Fechar"
                         className="p-1.5 text-amber-500/40 hover:text-amber-500/70 hover:bg-amber-500/10 rounded-lg transition-all"
                     >
