@@ -38,7 +38,7 @@ export default function Metas({ db, toast }: MetasProps) {
         } else {
             setML(''); setMV(''); setCpmC(''); setCpmV(''); setMargem('')
         }
-    }, [mes, me?.id])
+    }, [me])
 
     const save = async (e: React.FormEvent) => {
         e.preventDefault()

@@ -1,13 +1,13 @@
 diff --git a/src/components/ProTip.tsx b/src/components/ProTip.tsx
-index d8effe2e69bea2d6f83fa4838777d23dda1438b6..831ab65242dca0b0e77990d94d65562fca3485b2 100644
+index d8effe2e69bea2d6f83fa4838777d23dda1438b6..2932c3dc6d7a7d20c0def312034132ecedd52d7e 100644
 --- a/src/components/ProTip.tsx
 +++ b/src/components/ProTip.tsx
-@@ -1,28 +1,28 @@
+@@ -1,29 +1,28 @@
  'use client'
  
 -import React, { useState, useCallback, useEffect } from 'react'
-+import React, { useState, useCallback, useMemo } from 'react'
- import { ViewType } from '../types'
+-import { ViewType } from '../types'
++import React, { useState } from 'react'
  import { Zap, X, RefreshCw } from 'lucide-react'
  import { motion, AnimatePresence } from 'motion/react'
  
@@ -32,7 +32,13 @@ index d8effe2e69bea2d6f83fa4838777d23dda1438b6..831ab65242dca0b0e77990d94d65562f
          { text: 'CPM abaixo de R$18/mil é a zona verde. Entre R$18–R$25 é aceitável. Acima de R$25, negocie ou recuse.', tag: 'CPM' },
          { text: 'Compra parcelada? As parcelas aparecem automaticamente na Projeção de Caixa com os meses de vencimento.', tag: 'Parcelas' },
          { text: 'Transferências bonificadas reduzem seu CPM efetivo. Um bônus de 100% divide o custo por dois.', tag: 'Bônus' },
-@@ -69,93 +69,88 @@ const TIPS: Record<string, { text: string; tag?: string }[]> = {
+         { text: 'Exporte para CSV regularmente e guarde em planilha pessoal — é seu backup histórico fora do sistema.', tag: 'Backup' },
+@@ -64,98 +63,105 @@ const TIPS: Record<string, { text: string; tag?: string }[]> = {
+         { text: 'Metas de volume ajudam a escalar: dobrar o volume mantendo margem = dobrar o lucro absoluto.', tag: 'Escala' },
+         { text: 'Sazonalidade (Black Friday, bônus de transferência) afeta o CPM disponível. Revise metas mensalmente.', tag: 'Sazonalidade' },
+         { text: 'Compartilhe metas com um parceiro — accountability externo aumenta o cumprimento em ~40%.', tag: 'Pro' },
+     ],
+     mercado: [
          { text: 'Promoções relâmpago de bônus de transferência duram 24–72h. Configure alertas para não perder.', tag: 'Alerta' },
          { text: 'Histórico de CPM mostra sazonalidade — meses com mais compradores tendem a ter CPMs mais altos.', tag: 'Análise' },
          { text: 'CPM abaixo da sua meta ativa? Compre o máximo que seu caixa e limite permitirem.', tag: 'Oportunidade' },
@@ -53,50 +59,63 @@ index d8effe2e69bea2d6f83fa4838777d23dda1438b6..831ab65242dca0b0e77990d94d65562f
      { text: 'Exporte seus dados em CSV regularmente para manter um backup pessoal.', tag: 'Backup' },
  ]
  
++
++const hashText = (text: string) => {
++    let hash = 0
++    for (let i = 0; i < text.length; i += 1) {
++        hash = (hash * 31 + text.charCodeAt(i)) | 0
++    }
++    return Math.abs(hash)
++}
++
  interface ProTipProps {
-     view: string // Using string to allow flexible view names
+-    view: string // Using string to allow flexible view names
++    view: string
  }
  
  export default function ProTip({ view }: ProTipProps) {
--    const tips = TIPS[view] || DEFAULT_TIPS
-+    const [hiddenByView, setHiddenByView] = useState<Record<string, boolean>>({})
-+    const [shuffleSeed, setShuffleSeed] = useState(0)
+     const tips = TIPS[view] || DEFAULT_TIPS
  
 -    const [visible, setVisible] = useState(true)
 -    const [currentTip, setCurrentTip] = useState(() =>
 -        tips[Math.floor(Math.random() * tips.length)]
 -    )
--
++    const [shuffleSeed, setShuffleSeed] = useState(0)
++    const [hiddenViews, setHiddenViews] = useState<Record<string, boolean>>({})
++
++    const tipIndex = hashText(`${view}:${shuffleSeed}`) % tips.length
++    const currentTip = tips[tipIndex]
++
++    const visible = !hiddenViews[view]
+ 
 -    // Nova dica aleatória ao trocar de aba
 -    useEffect(() => {
 -        const t = TIPS[view] || DEFAULT_TIPS
 -        setCurrentTip(t[Math.floor(Math.random() * t.length)])
 -        setVisible(true)
 -    }, [view])
-+    const currentTip = useMemo(() => {
-+        const tips = TIPS[view] || DEFAULT_TIPS
-+        const seed = `${view}-${shuffleSeed}`
-+        const hash = Array.from(seed).reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) >>> 0, 0)
-+        return tips[hash % tips.length]
-+    }, [view, shuffleSeed])
++    const shuffle = () => {
++        setHiddenViews(prev => ({ ...prev, [view]: false }))
++        setShuffleSeed(prev => prev + 1)
++    }
  
-     const shuffle = useCallback(() => {
+-    const shuffle = useCallback(() => {
 -        const t = TIPS[view] || DEFAULT_TIPS
 -        const available = t.filter(tip => tip.text !== currentTip.text)
 -        const next = available[Math.floor(Math.random() * available.length)] || t[0]
 -        setCurrentTip(next)
 -    }, [view, currentTip])
-+        setShuffleSeed(current => current + 1)
-+    }, [])
-+
-+    const visible = !hiddenByView[view]
++    const hide = () => {
++        setHiddenViews(prev => ({ ...prev, [view]: true }))
++    }
  
      if (!visible) return null
  
      return (
          <AnimatePresence mode="wait">
              <motion.div
-                 key={currentTip.text}
+-                key={currentTip.text}
++                key={`${view}-${shuffleSeed}`}
                  initial={{ opacity: 0, y: -6 }}
                  animate={{ opacity: 1, y: 0 }}
                  exit={{ opacity: 0, y: -6 }}
@@ -128,7 +147,7 @@ index d8effe2e69bea2d6f83fa4838777d23dda1438b6..831ab65242dca0b0e77990d94d65562f
                      </button>
                      <button
 -                        onClick={() => setVisible(false)}
-+                        onClick={() => setHiddenByView(current => ({ ...current, [view]: true }))}
++                        onClick={hide}
                          title="Fechar"
                          className="p-1.5 text-amber-500/40 hover:text-amber-500/70 hover:bg-amber-500/10 rounded-lg transition-all"
                      >

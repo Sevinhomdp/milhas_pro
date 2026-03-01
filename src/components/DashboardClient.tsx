@@ -1,8 +1,8 @@
 diff --git a/src/components/DashboardClient.tsx b/src/components/DashboardClient.tsx
-index d2bed1a4358d11d33722d03f7724e56bfe1c20d3..7eac3f09e2ab1ac47df44b83baf4daa09794dad9 100644
+index d2bed1a4358d11d33722d03f7724e56bfe1c20d3..0d7e902d46387f4e546748edc3f31050dff73033 100644
 --- a/src/components/DashboardClient.tsx
 +++ b/src/components/DashboardClient.tsx
-@@ -32,60 +32,57 @@ import { motion, AnimatePresence } from 'motion/react'
+@@ -32,60 +32,56 @@ import { motion, AnimatePresence } from 'motion/react'
  
  // Views
  import { Dashboard } from './features/Dashboard'
@@ -35,7 +35,7 @@ index d2bed1a4358d11d33722d03f7724e56bfe1c20d3..7eac3f09e2ab1ac47df44b83baf4daa0
 +    })
      const [confirmModal, setConfirmModal] = useState<{ title: string; msg: string; onConfirm: () => void } | null>(null)
      const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null)
- 
+-
 -    // 1.3 — Sincronização de tema (anti-flash)
 -    useEffect(() => {
 -        const isDark = document.documentElement.classList.contains('dark')
