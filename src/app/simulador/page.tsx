@@ -1,6 +1,5 @@
-'use client'
-import Simulador from '@/src/components/features/Simulador'
+import { SimuladorRoute } from '@/src/components/routes/SimuladorRoute'
 
 export default function SimuladorPage() {
-  return <Simulador theme="dark" />
+  return <SimuladorRoute />
 }
