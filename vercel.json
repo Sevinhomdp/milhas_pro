@@ -1,14 +1,34 @@
-{
-    "crons": [
-        {
-            "path": "/api/fetch-market-prices",
-            "schedule": "0 9 * * *"
-        }
-    ],
-    "rewrites": [
-        {
-            "source": "/api/:path*",
-            "destination": "https://xoegapeodtbncirqvlmi.supabase.co/functions/v1/:path*"
-        }
-    ]
-}
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/vercel.json b/vercel.json
+index c62528a6846069941545567f7e417ef90e4939fc..4cae04fd4e1a7d3ba07e23cd74843e639c032baa 100644
+--- a/vercel.json
++++ b/vercel.json
+@@ -1,22 +1,14 @@
+ {
+     "crons": [
+         {
+             "path": "/api/fetch-market-prices",
+-            "schedule": "0 */6 * * *"
+-        },
+-        {
+-            "path": "/api/fetch-market-news",
+-            "schedule": "0 * * * *"
+-        },
+-        {
+-            "path": "/api/check-alerts",
+-            "schedule": "*/30 * * * *"
++            "schedule": "0 9 * * *"
+         }
+     ],
+     "rewrites": [
+         {
+             "source": "/api/:path*",
+             "destination": "https://xoegapeodtbncirqvlmi.supabase.co/functions/v1/:path*"
+         }
+     ]
+-}
+\ No newline at end of file
++}
+ 
+EOF
+)
