@@ -5,6 +5,30 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Design Tokens — Black & Gold ────────────────────────────
+   * Tailwind v4 resolve --color-X automaticamente para as classes
+   * bg-X, text-X, border-X. Sem esses tokens, bg-accent,
+   * text-primary, bg-bgDark etc. resultam em classes sem efeito.
+   * ─────────────────────────────────────────────────────────── */
+
+  /* Acento dourado */
+  --color-accent:       #d4af37;
+  --color-accentLight:  #e6c84a;
+
+  /* Cor de texto sobre o acento (navy escuro) */
+  --color-primary:      #0f172a;
+
+  /* Fundos */
+  --color-bg:           #f1f5f9;
+  --color-bgDark:       #020617;
+
+  /* Superfícies dark (cards, sidebar) */
+  --color-surfaceDark:  #0f172a;
+  --color-surfaceDark2: #1e2d44;
+
+  /* Bordas */
+  --color-borderDark:   rgba(255,255,255,0.06);
 }
 
 @layer base {

@@ -3,8 +3,8 @@
 import * as React from 'react'
 import { createClient } from '@/src/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Plane, Mail, Lock, ArrowRight, Loader2, User, Sparkles } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Plane, Mail, Lock, ArrowRight, Loader2, User, Sparkles, CheckCircle } from 'lucide-react'
+import { motion, AnimatePresence } from 'motion/react'
 
 export default function LoginPage() {
   const [email, setEmail] = React.useState('')
@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [successMsg, setSuccessMsg] = React.useState<string | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -20,6 +21,7 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setSuccessMsg(null)
 
     try {
       if (isSignUp) {
@@ -44,7 +46,7 @@ export default function LoginPage() {
           })
         }
 
-        setError('Conta criada! Verifique seu email para confirmar.')
+        setSuccessMsg('Conta criada! Verifique seu email para confirmar.')
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -176,6 +178,15 @@ export default function LoginPage() {
                   className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-[11px] font-bold text-center flex items-center justify-center gap-2"
                 >
                   <Sparkles className="w-3 h-3" /> {error}
+                </motion.div>
+              )}
+              {successMsg && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-[11px] font-bold text-center flex items-center justify-center gap-2"
+                >
+                  <CheckCircle className="w-3 h-3" /> {successMsg}
                 </motion.div>
               )}
             </AnimatePresence>

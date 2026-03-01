@@ -124,7 +124,7 @@ function MarketAnalytics({ db }: { db: Database }) {
 
                 <div className="flex items-center justify-between mb-8">
                     <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest leading-none">Evolução do Milheiro (R$)</h3>
-                    <Badge variant="info">DADOS AUTO-SCRAPED</Badge>
+                    <Badge variant="info">SIMULAÇÃO DE MERCADO</Badge>
                 </div>
 
                 <div className="h-[350px] w-full mt-4">
@@ -183,8 +183,8 @@ function MarketAnalytics({ db }: { db: Database }) {
                     <Info size={16} />
                 </div>
                 <p className="text-[11px] text-slate-500 leading-relaxed font-bold">
-                    <span className="text-amber-500 uppercase tracking-widest mr-2 underline decoration-2 underline-offset-4">Insight IA:</span>
-                    Analisando {filterProg}... Tendência de {(db.market_prices || []).find(p => p.programa === filterProg)?.tendencia === 'UP' ? 'ALTA' : 'ESTABILIDADE'} detectada via Engine.
+                    <span className="text-amber-500 uppercase tracking-widest mr-2 underline decoration-2 underline-offset-4">Nota:</span>
+                    Os dados exibidos são uma simulação de mercado para demonstração. A integração com feeds de preços reais (HotMilhas/MaxMilhas) está prevista em versão futura.
                 </p>
             </div>
         </div>

@@ -21,7 +21,8 @@ import {
   Sun,
   Moon,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Zap
 } from "lucide-react"
 import { cn } from "@/src/lib/utils"
 import { createClient } from "@/src/lib/supabase/client"
@@ -35,7 +36,8 @@ const navItems = [
   { href: "/projecao", label: "Projeção de Caixa", icon: TrendingUp },
   { href: "/simulador", label: "Simulador", icon: Calculator },
   { href: "/cartoes", label: "Cartões", icon: CreditCard },
-  { href: "/metas", label: "Metas", icon: Target },
+  { href: "/metas",        label: "Metas",             icon: Target },
+  { href: "/inteligencia", label: "Inteligência",      icon: Zap },
 ]
 
 import { useTheme } from "@/src/components/providers/ThemeProvider"

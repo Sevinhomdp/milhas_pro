@@ -15,7 +15,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const [theme, setTheme] = React.useState<Theme>('dark')
 
     React.useEffect(() => {
-        const saved = localStorage.getItem('theme') as Theme | null
+        const saved = localStorage.getItem('milhas-pro-theme') as Theme | null
         const pref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
         const initial = saved || pref
         setTheme(initial)
@@ -25,7 +25,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const toggleTheme = () => {
         const next = theme === 'dark' ? 'light' : 'dark'
         setTheme(next)
-        localStorage.setItem('theme', next)
+        localStorage.setItem('milhas-pro-theme', next)
         document.documentElement.classList.toggle('dark', next === 'dark')
     }
 

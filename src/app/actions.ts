@@ -158,17 +158,37 @@ export async function executarTransf(data: {
   })
   if (error) throw new Error(error.message)
 
-  // Também precisamos registrar a entrada no destino se quisermos que o saldo calculado funcione
+  // Registrar a entrada no destino como 'compra' com custo herdado da origem.
+  //
+  // PROBLEMA ORIGINAL: inserir type='compra' com value=0 corromperia o CPM
+  // do destino (diluía a média ponderada artificialmente).
+  //
+  // SOLUÇÃO: calcular o custo efetivo das milhas destinadas com base no
+  // CPM médio do programa de origem. Assim o trigger calcula o CPM correto.
+  //
+  // Exemplo: 10.000 milhas Livelo (CPM R$15) → Smiles c/ 100% bônus = 20.000 milhas.
+  // Custo herdado = (10.000/1000) × R$15 = R$150.
+  // CPM resultante no Smiles = (R$150/20.000) × 1000 = R$7,50/mil. ✓
+  const { data: origemBalance } = await supabase
+    .from('balances')
+    .select('custo_medio')
+    .eq('user_id', user.id)
+    .eq('program_id', data.program_id_origem)
+    .single()
+
+  const custoMedioOrigem = Number(origemBalance?.custo_medio) || 0
+  const valorHerdado     = (data.quantity / 1000) * custoMedioOrigem
+
   await supabase.from('operations').insert({
     user_id: user.id,
-    type: 'compra', // Entrada de milhas via bônus
+    type: 'compra',             // tipo 'compra' para o trigger atualizar saldo e CPM corretamente
     date: data.date,
     program_id: data.program_id_destino,
-    quantity: milhas_destino,
-    value: 0,
+    quantity: milhas_destino,   // total com bônus
+    value: valorHerdado,        // custo proporcional herdado — NÃO zero
     fees: 0,
     status: 'concluido',
-    observacao: `Bônus transferência de ID: ${data.program_id_origem}`,
+    observacao: `Entrada via transferência de ${data.program_id_origem}. Bônus ${data.bonus}%. CPM herdado: R$${(custoMedioOrigem / (1 + data.bonus / 100)).toFixed(2)}/mil`,
   })
 
   revalidatePath('/', 'layout')

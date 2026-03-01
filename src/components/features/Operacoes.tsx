@@ -21,6 +21,25 @@ type Score = { label: string; color: 'green' | 'yellow' | 'red' } | null
 export default function Operacoes({ db, toast }: OperacoesProps) {
     const { operacoes, cartoes, programs } = db
 
+    // M-08 FIX: Respeitar a seleção de "Programas Ativos" feita em Configurações.
+    // Lê a lista do localStorage (mesma chave usada por Configuracoes.tsx).
+    // Se não houver preferência salva, exibe todos os programas.
+    const [programasFiltrados, setProgramasFiltrados] = React.useState<typeof programs>(programs)
+    React.useEffect(() => {
+        try {
+            const saved = localStorage.getItem('progsAtivos')
+            if (saved) {
+                const ativos: string[] = JSON.parse(saved)
+                const filtrados = programs.filter(p => ativos.includes(p.name))
+                setProgramasFiltrados(filtrados.length > 0 ? filtrados : programs)
+            } else {
+                setProgramasFiltrados(programs)
+            }
+        } catch {
+            setProgramasFiltrados(programs)
+        }
+    }, [programs])
+
     const [tipo, setTipo] = React.useState<TipoOp>('compra')
     const [loading, setLoading] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
@@ -37,9 +56,9 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
     const today = new Date().toISOString().split('T')[0]
 
     const [fd, setFdState] = React.useState<Record<string, string>>({
-        program_id: programs[0]?.id || '',
-        program_id_origem: programs[0]?.id || '',
-        program_id_destino: programs[1]?.id || '',
+        program_id: programasFiltrados[0]?.id || '',
+        program_id_origem: programasFiltrados[0]?.id || '',
+        program_id_destino: programasFiltrados[1]?.id || '',
         cartao_id: '',
         parcelas: '1',
         date: today,
@@ -69,6 +88,27 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault(); setLoading(true); setError(null)
         try {
+            // ── Validações de entrada ─────────────────────────────────────
+            const qtdNum = parseFloat(qtd) || 0
+            const valorNum = parseFloat(valor) || 0
+
+            if (qtdNum <= 0) {
+                setError('Informe uma quantidade de milhas válida (maior que zero).')
+                setLoading(false)
+                return
+            }
+            if (tipo !== 'transferencia' && valorNum <= 0) {
+                setError('Informe um valor em reais válido (maior que zero).')
+                setLoading(false)
+                return
+            }
+            if (!gf('date')) {
+                setError('Informe a data da operação.')
+                setLoading(false)
+                return
+            }
+            // ─────────────────────────────────────────────────────────────
+
             if (tipo === 'compra') {
                 await executarCompra({
                     program_id: gf('program_id'),
@@ -161,7 +201,7 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
                                     <div>
                                         <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Programa</label>
                                         <select value={gf('program_id')} onChange={e => sf('program_id', e.target.value)} className={inputCls} required>
-                                            {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                            {programasFiltrados.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                         </select>
                                     </div>
                                 ) : (
@@ -169,13 +209,13 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
                                         <div>
                                             <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Origem</label>
                                             <select value={gf('program_id_origem')} onChange={e => sf('program_id_origem', e.target.value)} className={inputCls} required>
-                                                {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                {programasFiltrados.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Destino</label>
                                             <select value={gf('program_id_destino')} onChange={e => sf('program_id_destino', e.target.value)} className={inputCls} required>
-                                                {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                {programasFiltrados.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                             </select>
                                         </div>
                                     </div>

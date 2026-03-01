@@ -44,10 +44,26 @@ export function Dashboard({ saldos, operacoes, faturas, cartoes, metas }: Dashbo
   const aReceber = operacoes.filter(op => op.type === 'venda' && op.status === 'pendente').reduce((a: number, op: Operation) => a + (Number(op.value) - Number(op.fees)), 0)
   const aPagarFaturas = faturas.filter(f => !f.pago).reduce((a: number, f: FaturaParcela) => a + Number(f.valor), 0)
 
-  const roiMedio = vendas.length > 0 ? vendas.reduce((a: number, op: Operation) => {
-    // Placeholder logic for demo
-    return a + 25
-  }, 0) / vendas.length : 0
+  // ROI real: para cada venda recebida, calcula (receita líquida - custo) / custo * 100
+  // O custo é estimado via custo_medio do programa correspondente ao volume vendido.
+  const vendasRecebidas = vendas.filter(op => op.status === 'recebido')
+  const roiMedio = (() => {
+    if (vendasRecebidas.length === 0) return 0
+    let totalRoi = 0
+    let count = 0
+    vendasRecebidas.forEach(op => {
+      const saldo = saldos.find(s => s.program_id === op.program_id)
+      const custoMedio = saldo?.custo_medio ?? 0
+      if (custoMedio > 0 && Number(op.quantity) > 0) {
+        const custoTotal = (Number(op.quantity) / 1000) * custoMedio
+        const receitaLiquida = Number(op.value) - Number(op.fees)
+        const roi = ((receitaLiquida - custoTotal) / custoTotal) * 100
+        totalRoi += roi
+        count++
+      }
+    })
+    return count > 0 ? totalRoi / count : 0
+  })()
 
   const mesAtual = format(new Date(), 'yyyy-MM')
   const comprasMes = operacoes.filter(op => op.type === 'compra' && op.date?.startsWith(mesAtual))
