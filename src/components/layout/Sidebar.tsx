@@ -27,6 +27,7 @@ import {
 import { cn } from "@/src/lib/utils"
 import { createClient } from "@/src/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { Profile } from "@/src/types"
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -41,19 +42,20 @@ const navItems = [
 ]
 
 import { useTheme } from "@/src/components/providers/ThemeProvider"
-import { getProfile } from "@/src/app/actions"
-import { Profile } from "@/src/types"
 
-export function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v: boolean) => void }) {
+export function Sidebar({
+  isOpen,
+  setIsOpen,
+  profile,
+}: {
+  isOpen: boolean
+  setIsOpen: (v: boolean) => void
+  profile: Profile | null
+}) {
   const pathname = usePathname()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
-  const [profile, setProfile] = React.useState<Profile | null>(null)
-
-  React.useEffect(() => {
-    getProfile().then(setProfile)
-  }, [])
 
   const handleLogout = async () => {
     const supabase = createClient()
