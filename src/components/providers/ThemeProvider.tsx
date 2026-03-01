@@ -3,6 +3,13 @@
 import * as React from 'react'
 
 type Theme = 'light' | 'dark'
+const THEME_STORAGE_KEY = 'milhas-pro-theme'
+
+const applyThemeToDocument = (theme: Theme) => {
+    const root = document.documentElement
+    root.classList.toggle('dark', theme === 'dark')
+    root.style.colorScheme = theme
+}
 
 interface ThemeContextType {
     theme: Theme
@@ -12,21 +19,23 @@ interface ThemeContextType {
 const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-    const [theme, setTheme] = React.useState<Theme>('dark')
+    const [theme, setTheme] = React.useState<Theme>('light')
 
     React.useEffect(() => {
-        const saved = localStorage.getItem('milhas-pro-theme') as Theme | null
-        const pref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-        const initial = saved || pref
+        const saved = localStorage.getItem(THEME_STORAGE_KEY)
+        const fromStorage: Theme | null = saved === 'dark' || saved === 'light' ? saved : null
+        const fromDom: Theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+        const initial = fromStorage ?? fromDom
+
         setTheme(initial)
-        document.documentElement.classList.toggle('dark', initial === 'dark')
+        applyThemeToDocument(initial)
     }, [])
 
     const toggleTheme = () => {
         const next = theme === 'dark' ? 'light' : 'dark'
         setTheme(next)
-        localStorage.setItem('milhas-pro-theme', next)
-        document.documentElement.classList.toggle('dark', next === 'dark')
+        localStorage.setItem(THEME_STORAGE_KEY, next)
+        applyThemeToDocument(next)
     }
 
     return (

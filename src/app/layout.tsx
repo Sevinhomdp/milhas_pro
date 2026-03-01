@@ -31,8 +31,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               (function() {
                 try {
                   var t = localStorage.getItem('milhas-pro-theme');
-                  var isDark = t ? t === 'dark' : true;
-                  if (isDark) {
+                  var storedTheme = (t === 'dark' || t === 'light') ? t : null;
+                  var theme = storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                  if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                     document.documentElement.style.colorScheme = 'dark';
                   } else {
@@ -40,7 +41,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     document.documentElement.style.colorScheme = 'light';
                   }
                 } catch (e) {
-                  document.documentElement.classList.add('dark');
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.style.colorScheme = 'light';
                 }
               })();
             `,
