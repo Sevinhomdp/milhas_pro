@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import {
   LayoutDashboard,
@@ -26,7 +26,6 @@ import {
 } from "lucide-react"
 import { cn } from "@/src/lib/utils"
 import { createClient } from "@/src/lib/supabase/client"
-import { useRouter } from "next/navigation"
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -41,7 +40,6 @@ const navItems = [
 ]
 
 import { useTheme } from "@/src/components/providers/ThemeProvider"
-import { getProfile } from "@/src/app/actions"
 import { Profile } from "@/src/types"
 
 export function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v: boolean) => void }) {
@@ -52,7 +50,38 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v:
   const [profile, setProfile] = React.useState<Profile | null>(null)
 
   React.useEffect(() => {
-    getProfile().then(setProfile)
+    let isMounted = true
+    const supabase = createClient()
+
+    const loadProfile = async () => {
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+
+      if (userError || !userData.user) {
+        if (isMounted) setProfile(null)
+        return
+      }
+
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userData.user.id)
+        .maybeSingle()
+
+      if (!isMounted) return
+
+      if (profileError) {
+        setProfile(null)
+        return
+      }
+
+      setProfile(profileData as Profile | null)
+    }
+
+    loadProfile()
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   const handleLogout = async () => {
