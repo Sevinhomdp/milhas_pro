@@ -14,6 +14,7 @@ import {
   CreditCard,
   Target,
   Settings,
+  HelpCircle,
   LogOut,
   X,
   Plane,
@@ -31,6 +32,7 @@ const navItems = [
   { href: "/saldos", label: "Saldos", icon: Wallet },
   { href: "/operacoes", label: "Lançamentos", icon: ArrowRightLeft },
   { href: "/dre", label: "DRE Mensal", icon: BarChart3 },
+  { href: "/ajuda", label: "Ajuda", icon: HelpCircle },
   { href: "/projecao", label: "Projeção de Caixa", icon: TrendingUp },
   { href: "/simulador", label: "Simulador", icon: Calculator },
   { href: "/cartoes", label: "Cartões", icon: CreditCard },
@@ -38,32 +40,20 @@ const navItems = [
   { href: "/configuracoes", label: "Configurações", icon: Settings },
 ]
 
+import { useTheme } from "@/src/components/providers/ThemeProvider"
+import { getProfile } from "@/src/app/actions"
+import { Profile } from "@/src/types"
+
 export function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v: boolean) => void }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [isDark, setIsDark] = React.useState(true)
+  const { theme, toggleTheme } = useTheme()
+  const isDark = theme === 'dark'
+  const [profile, setProfile] = React.useState<Profile | null>(null)
 
   React.useEffect(() => {
-    const isDarkStored = localStorage.getItem("theme") === "dark" || (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)
-    setIsDark(isDarkStored)
-    if (isDarkStored) {
-      document.documentElement.classList.add("dark")
-    } else {
-      document.documentElement.classList.remove("dark")
-    }
+    getProfile().then(setProfile)
   }, [])
-
-  const toggleTheme = () => {
-    const newTheme = !isDark
-    setIsDark(newTheme)
-    if (newTheme) {
-      document.documentElement.classList.add("dark")
-      localStorage.setItem("theme", "dark")
-    } else {
-      document.documentElement.classList.remove("dark")
-      localStorage.setItem("theme", "light")
-    }
-  }
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -167,6 +157,28 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v:
               )
             })}
           </nav>
+        </div>
+
+        {/* Profile */}
+        <div className="px-3 mb-2">
+          <div className={cn(
+            "flex items-center gap-3 p-2 rounded-xl bg-white/5 border border-white/5",
+            !isOpen && "justify-center"
+          )}>
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Avatar" className="h-8 w-8 rounded-lg object-cover" />
+            ) : (
+              <div className="h-8 w-8 rounded-lg bg-accent/20 flex items-center justify-center text-accent font-bold text-xs">
+                {profile?.full_name?.charAt(0) || 'U'}
+              </div>
+            )}
+            {isOpen && (
+              <div className="flex-1 overflow-hidden">
+                <p className="text-xs font-bold text-white truncate">{profile?.full_name || 'Usuário'}</p>
+                <p className="text-[10px] text-gray-500 truncate">SaaS Pro</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer */}

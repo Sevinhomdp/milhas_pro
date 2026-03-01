@@ -4,6 +4,8 @@ import { createClient } from '@/src/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { format } from 'date-fns'
 
+import { Profile, Program, Operation, Balance, Meta } from '@/src/types'
+
 async function getUser() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -11,65 +13,68 @@ async function getUser() {
   return { supabase, user }
 }
 
+export async function getProfile() {
+  const { supabase, user } = await getUser()
+  const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+  if (error) return null
+  return data as Profile
+}
+
+export async function getPrograms() {
+  const { supabase, user } = await getUser()
+  const { data, error } = await supabase
+    .from('programs')
+    .select('*')
+    .or(`user_id.is.null,user_id.eq.${user.id}`)
+    .order('name')
+  if (error) return []
+  return data as Program[]
+}
+
+export async function getProgramById(id: string) {
+  const { supabase } = await getUser()
+  const { data } = await supabase.from('programs').select('*').eq('id', id).single()
+  return data as Program
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPRA
+// OPERAÇÕES
 // ─────────────────────────────────────────────────────────────────────────────
 export async function executarCompra(data: {
-  programa: string
-  quantidade: number
-  valor_total: number
+  program_id: string
+  quantity: number
+  value: number
+  fees?: number
   cartao_id?: string | null
   parcelas: number
-  data: string
+  date: string
   observacao?: string
 }) {
   const { supabase, user } = await getUser()
-  const cpm = data.quantidade > 0 ? (data.valor_total / data.quantidade) * 1000 : 0
 
   const { data: op, error } = await supabase
-    .from('operacoes')
+    .from('operations')
     .insert({
       user_id: user.id,
-      tipo: 'COMPRA',
-      data: data.data,
-      programa: data.programa,
-      quantidade: data.quantidade,
-      valor_total: data.valor_total,
-      cpm,
-      status_recebimento: 'recebido',
-      cartao_id: data.cartao_id || null,
+      type: 'compra',
+      date: data.date,
+      program_id: data.program_id,
+      quantity: data.quantity,
+      value: data.value,
+      fees: data.fees || 0,
+      status: 'concluido',
       observacao: data.observacao || null,
     })
     .select()
     .single()
+
   if (error) throw new Error(error.message)
-
-  // Atualizar saldo com custo médio ponderado
-  const { data: saldoAtual } = await supabase
-    .from('programas_saldos')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('nome_programa', data.programa)
-    .maybeSingle()
-
-  const saldoExistente = Number(saldoAtual?.saldo_atual) || 0
-  const custoExistente = Number(saldoAtual?.custo_medio) || 0
-  const novoSaldo = saldoExistente + data.quantidade
-  const novoCusto = novoSaldo > 0 ? ((saldoExistente * custoExistente) + data.valor_total) / novoSaldo : 0
-
-  await supabase.from('programas_saldos').upsert({
-    user_id: user.id,
-    nome_programa: data.programa,
-    saldo_atual: novoSaldo,
-    custo_medio: novoCusto,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'user_id,nome_programa' })
 
   // Gerar parcelas
   if (data.cartao_id && data.parcelas >= 1) {
     const { data: cartao } = await supabase.from('cartoes').select('*').eq('id', data.cartao_id).single()
     if (cartao) {
-      const dataCompra = new Date(data.data + 'T12:00:00')
+      const dataCompra = new Date(data.date + 'T12:00:00')
       const faturas = Array.from({ length: data.parcelas }, (_, i) => {
         const deslocamento = dataCompra.getDate() >= cartao.dia_fechamento ? i + 1 : i
         const dtVenc = new Date(
@@ -81,7 +86,7 @@ export async function executarCompra(data: {
           user_id: user.id,
           operacao_id: op.id,
           cartao_id: data.cartao_id,
-          valor: data.valor_total / data.parcelas,
+          valor: (data.value + (data.fees || 0)) / data.parcelas,
           mes_referencia: format(dtVenc, 'yyyy-MM'),
           parc_num: i + 1,
           total_parc: data.parcelas,
@@ -95,110 +100,76 @@ export async function executarCompra(data: {
   revalidatePath('/', 'layout')
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// VENDA
-// ─────────────────────────────────────────────────────────────────────────────
 export async function executarVenda(data: {
-  programa: string
-  quantidade: number
-  valor_total: number
-  data: string
+  program_id: string
+  quantity: number
+  value: number
+  fees?: number
+  date: string
   data_recebimento?: string
   status_recebimento: 'pendente' | 'recebido'
   observacao?: string
 }) {
   const { supabase, user } = await getUser()
 
-  const { data: saldoAtual } = await supabase
-    .from('programas_saldos')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('nome_programa', data.programa)
-    .maybeSingle()
-
-  const custoMedio = Number(saldoAtual?.custo_medio) || 0
-  const custoTotal = (data.quantidade * custoMedio) / 1000
-  const roi = custoTotal > 0 ? ((data.valor_total - custoTotal) / custoTotal) * 100 : 0
-  const cpm = data.quantidade > 0 ? (data.valor_total / data.quantidade) * 1000 : 0
-
-  const { error } = await supabase.from('operacoes').insert({
+  const { error } = await supabase.from('operations').insert({
     user_id: user.id,
-    tipo: 'VENDA',
-    data: data.data,
-    programa: data.programa,
-    quantidade: data.quantidade,
-    valor_total: data.valor_total,
-    cpm,
-    roi,
-    status_recebimento: data.status_recebimento,
-    data_recebimento: data.data_recebimento || null,
+    type: 'venda',
+    date: data.date,
+    program_id: data.program_id,
+    quantity: data.quantity,
+    value: data.value,
+    fees: data.fees || 0,
+    status: 'concluido',
     observacao: data.observacao || null,
   })
   if (error) throw new Error(error.message)
 
-  await supabase.from('programas_saldos').upsert({
-    user_id: user.id,
-    nome_programa: data.programa,
-    saldo_atual: Math.max(0, (Number(saldoAtual?.saldo_atual) || 0) - data.quantidade),
-    custo_medio: custoMedio,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'user_id,nome_programa' })
-
   revalidatePath('/', 'layout')
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TRANSFERÊNCIA
-// ─────────────────────────────────────────────────────────────────────────────
 export async function executarTransf(data: {
-  programa_origem: string
-  programa_destino: string
-  quantidade: number
+  program_id_origem: string
+  program_id_destino: string
+  quantity: number
   bonus: number
   taxa: number
   cartao_id?: string | null
-  data: string
+  date: string
 }) {
   const { supabase, user } = await getUser()
-  if (data.programa_origem === data.programa_destino) throw new Error('Origem e destino não podem ser iguais')
+  if (data.program_id_origem === data.program_id_destino) throw new Error('Origem e destino não podem ser iguais')
 
-  const milhas_destino = data.quantidade * (1 + data.bonus / 100)
+  const milhas_destino = data.quantity * (1 + data.bonus / 100)
 
-  const { error } = await supabase.from('operacoes').insert({
+  // Registrar a saída (origem) e entrada (destino) como uma operação de transferência
+  // No novo schema, podemos representar isso como uma operação única ou duas. 
+  // O prompt original sugeria uma operação 'transferencia'.
+  const { error } = await supabase.from('operations').insert({
     user_id: user.id,
-    tipo: 'TRANSF',
-    data: data.data,
-    programa: `${data.programa_origem}→${data.programa_destino}`,
-    quantidade: milhas_destino,
-    valor_total: data.taxa,
-    cartao_id: data.cartao_id || null,
-    status_recebimento: 'recebido',
-    observacao: `Bônus ${data.bonus}%`,
+    type: 'transferencia',
+    date: data.date,
+    program_id: data.program_id_origem, // Referência inicial
+    quantity: data.quantity,
+    value: data.taxa,
+    fees: 0,
+    status: 'concluido',
+    observacao: `Para programa destino ID: ${data.program_id_destino}. Bônus ${data.bonus}%`,
   })
   if (error) throw new Error(error.message)
 
-  const { data: sO } = await supabase.from('programas_saldos').select('*').eq('user_id', user.id).eq('nome_programa', data.programa_origem).maybeSingle()
-  await supabase.from('programas_saldos').upsert({
+  // Também precisamos registrar a entrada no destino se quisermos que o saldo calculado funcione
+  await supabase.from('operations').insert({
     user_id: user.id,
-    nome_programa: data.programa_origem,
-    saldo_atual: Math.max(0, (Number(sO?.saldo_atual) || 0) - data.quantidade),
-    custo_medio: Number(sO?.custo_medio) || 0,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'user_id,nome_programa' })
-
-  const { data: sD } = await supabase.from('programas_saldos').select('*').eq('user_id', user.id).eq('nome_programa', data.programa_destino).maybeSingle()
-  const saldoD = Number(sD?.saldo_atual) || 0
-  const custoD = Number(sD?.custo_medio) || 0
-  const custoTransf = ((data.quantidade * (Number(sO?.custo_medio) || 0)) / 1000) + data.taxa
-  const novoCustoD = (saldoD + milhas_destino) > 0 ? ((saldoD * custoD) + custoTransf) / (saldoD + milhas_destino) : 0
-
-  await supabase.from('programas_saldos').upsert({
-    user_id: user.id,
-    nome_programa: data.programa_destino,
-    saldo_atual: saldoD + milhas_destino,
-    custo_medio: novoCustoD,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'user_id,nome_programa' })
+    type: 'compra', // Entrada de milhas via bônus
+    date: data.date,
+    program_id: data.program_id_destino,
+    quantity: milhas_destino,
+    value: 0,
+    fees: 0,
+    status: 'concluido',
+    observacao: `Bônus transferência de ID: ${data.program_id_origem}`,
+  })
 
   revalidatePath('/', 'layout')
 }
@@ -208,7 +179,7 @@ export async function executarTransf(data: {
 // ─────────────────────────────────────────────────────────────────────────────
 export async function excluirOperacao(id: string) {
   const { supabase, user } = await getUser()
-  const { error } = await supabase.from('operacoes').delete().eq('id', id).eq('user_id', user.id)
+  const { error } = await supabase.from('operations').delete().eq('id', id).eq('user_id', user.id)
   if (error) throw new Error(error.message)
   revalidatePath('/', 'layout')
 }
@@ -216,8 +187,8 @@ export async function excluirOperacao(id: string) {
 export async function marcarRecebido(ids: string[]) {
   const { supabase, user } = await getUser()
   const { error } = await supabase
-    .from('operacoes')
-    .update({ status_recebimento: 'recebido' })
+    .from('operations')
+    .update({ status: 'recebido' })
     .in('id', ids)
     .eq('user_id', user.id)
   if (error) throw new Error(error.message)
@@ -244,26 +215,6 @@ export async function removerCartao(id: string) {
   revalidatePath('/', 'layout')
 }
 
-export async function atualizarSaldo(programa: string, novoSaldo: number) {
-  const { supabase, user } = await getUser()
-  const { data: atual } = await supabase
-    .from('programas_saldos')
-    .select('custo_medio')
-    .eq('user_id', user.id)
-    .eq('nome_programa', programa)
-    .maybeSingle()
-
-  await supabase.from('programas_saldos').upsert({
-    user_id: user.id,
-    nome_programa: programa,
-    saldo_atual: novoSaldo,
-    custo_medio: Number(atual?.custo_medio) || 0,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'user_id,nome_programa' })
-
-  revalidatePath('/', 'layout')
-}
-
 export async function pagarParcelas(cartaoId: string, mesReferencia: string) {
   const { supabase, user } = await getUser()
   const { error } = await supabase
@@ -276,13 +227,46 @@ export async function pagarParcelas(cartaoId: string, mesReferencia: string) {
   revalidatePath('/', 'layout')
 }
 
-export async function salvarMeta(mes: string, metaLucro: number, metaVolume: number) {
+export async function registrarPrograma(name: string, currency_name?: string) {
+  const { supabase, user } = await getUser()
+  const { data, error } = await supabase.from('programs').insert({
+    user_id: user.id,
+    name,
+    currency_name: currency_name || null
+  }).select().single()
+  if (error) throw new Error(error.message)
+  return data as Program
+}
+
+export async function ajustarSaldoManual(program_id: string, manual_adjustment: number) {
+  const { supabase, user } = await getUser()
+  const { error } = await supabase.from('balances').upsert({
+    user_id: user.id,
+    program_id,
+    manual_adjustment,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,program_id' })
+  if (error) throw new Error(error.message)
+  revalidatePath('/', 'layout')
+}
+
+export async function salvarMeta(data: {
+  mes: string,
+  metaLucro: number,
+  metaVolume: number,
+  cpmCompra?: number,
+  cpmVenda?: number,
+  margem?: number
+}) {
   const { supabase, user } = await getUser()
   const { error } = await supabase.from('metas').upsert({
     user_id: user.id,
-    mes,
-    meta_lucro: metaLucro,
-    meta_volume_milhas: metaVolume,
+    mes: data.mes,
+    meta_lucro: data.metaLucro,
+    meta_volume_milhas: data.metaVolume,
+    cpm_compra_alvo: data.cpmCompra,
+    cpm_venda_alvo: data.cpmVenda,
+    margem_desejada: data.margem,
   }, { onConflict: 'user_id,mes' })
   if (error) throw new Error(error.message)
   revalidatePath('/', 'layout')

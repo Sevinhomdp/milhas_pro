@@ -24,19 +24,29 @@ export async function GET(request: Request) {
               )
             } catch {
               // The `setAll` method was called from a Server Component.
-              // This can be ignored if you have middleware refreshing
-              // user sessions.
             }
           },
         },
       }
     )
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
+    const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code)
+
+    if (!error && session?.user) {
+      const user = session.user
+      // Sync profile from Google/OAuth metadata
+      const fullName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0]
+      const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture
+
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        full_name: fullName,
+        avatar_url: avatarUrl,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' })
+
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
 
-  // return the user to an error page with instructions
   return NextResponse.redirect(`${origin}/login?error=auth-callback-failed`)
 }

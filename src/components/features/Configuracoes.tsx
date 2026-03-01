@@ -4,21 +4,14 @@ import * as React from 'react'
 import { alterarSenha } from '@/src/app/actions'
 import { Moon, Sun, Key, Settings } from 'lucide-react'
 import { Button } from '../ui/Button'
+import { useTheme } from '../providers/ThemeProvider'
 
 const PROGS = ['Livelo', 'Esfera', 'Átomos', 'Smiles', 'Azul', 'LATAM', 'Inter', 'Itaú']
 
 interface ConfiguracoesProps { userEmail?: string }
 
 export function Configuracoes({ userEmail }: ConfiguracoesProps) {
-    const [theme, setTheme] = React.useState<'dark' | 'light'>('dark')
-    React.useEffect(() => { const t = localStorage.getItem('theme') as 'dark' | 'light' | null; if (t) setTheme(t) }, [])
-
-    const toggleTheme = () => {
-        const next = theme === 'dark' ? 'light' : 'dark'
-        setTheme(next); localStorage.setItem('theme', next)
-        document.documentElement.classList.toggle('dark', next === 'dark')
-        document.documentElement.classList.toggle('light', next === 'light')
-    }
+    const { theme, toggleTheme } = useTheme()
 
     const [progsAtivos, setProgsAtivos] = React.useState<string[]>(() => {
         if (typeof window === 'undefined') return PROGS

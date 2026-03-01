@@ -18,6 +18,10 @@ export function Cartoes({ cartoes }: CartoesProps) {
     const [diaFech, setDiaFech] = React.useState('3')
     const [dolar, setDolar] = React.useState<number | null>(null)
     const [loadDolar, setLoadDolar] = React.useState(false)
+    const [valorGasto, setValorGasto] = React.useState('5000')
+    const [ptsPorDolar, setPtsPorDolar] = React.useState('2.5')
+
+    const fmtNum = (v: number) => Math.floor(v).toLocaleString('pt-BR')
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault(); setLoading(true)
@@ -138,24 +142,48 @@ export function Cartoes({ cartoes }: CartoesProps) {
             </div>
 
             <div className="card p-6">
-                <h2 className="field-label mb-4">🏦 Calculadora C6 Black (Pontos/Dólar)</h2>
-                <div className="flex items-center gap-3 flex-wrap">
-                    <Button variant="secondary" onClick={fetchDolar} loading={loadDolar} icon={<RefreshCw className="w-4 h-4" />}>
-                        Buscar Cotação
-                    </Button>
-                    {dolar && (
-                        <div className="flex items-center gap-4">
-                            <div>
-                                <span className="field-label mb-0">USD/BRL:</span>
-                                <span className="text-sm font-black text-accent tabular ml-1.5">R${dolar.toFixed(4)}</span>
-                            </div>
-                            <div>
-                                <span className="field-label mb-0">Pontos/USD (2.5x):</span>
-                                <span className="text-sm font-black text-success tabular ml-1.5">{(dolar * 2.5).toFixed(2)}</span>
-                            </div>
+                <h2 className="field-label mb-4">🏦 Simulador de Acúmulo (Pontos/Dólar)</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div>
+                        <label className="field-label">Valor Gasto (R$)</label>
+                        <input
+                            type="number"
+                            className={inputCls}
+                            placeholder="Ex: 5000"
+                            value={valorGasto}
+                            onChange={e => setValorGasto(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <label className="field-label">Pontos por Dólar</label>
+                        <input
+                            type="number"
+                            className={inputCls}
+                            placeholder="Ex: 2.5"
+                            value={ptsPorDolar}
+                            onChange={e => setPtsPorDolar(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <label className="field-label">Cotação do Dólar (R$)</label>
+                        <div className="flex gap-2">
+                            <input
+                                type="number"
+                                className={inputCls}
+                                value={dolar || ''}
+                                onChange={e => setDolar(parseFloat(e.target.value))}
+                            />
+                            <Button variant="secondary" size="md" onClick={fetchDolar} loading={loadDolar} icon={<RefreshCw className="w-4 h-4" />} />
                         </div>
-                    )}
+                    </div>
+                    <div className="flex flex-col justify-end">
+                        <label className="field-label">Total a Acumular</label>
+                        <div className="h-11 flex items-center px-4 rounded-xl bg-accent/5 border border-accent/20">
+                            <span className="text-accent font-black">{valorGasto && dolar && ptsPorDolar ? fmtNum((parseFloat(valorGasto) / dolar) * parseFloat(ptsPorDolar)) : '0'} pts</span>
+                        </div>
+                    </div>
                 </div>
+                <p className="text-[10px] text-gray-500">Dica: A cotação utilizada geralmente é o dólar PTAX + spread do cartão.</p>
             </div>
         </div>
     )

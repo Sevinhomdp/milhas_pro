@@ -11,12 +11,14 @@ export const metadata: Metadata = {
   description: 'Plataforma de gestão financeira para operadores de milhas aéreas.',
 }
 
+import { ThemeProvider } from '@/src/components/providers/ThemeProvider'
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
 
   return (
-    <html lang="pt-BR" className={`dark ${inter.variable}`} suppressHydrationWarning>
+    <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -34,12 +36,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }}
         />
       </head>
-      <body className="font-sans antialiased bg-bgDark text-gray-100">
-        {session ? (
-          <AppShell>{children}</AppShell>
-        ) : (
-          children
-        )}
+      <body className="font-sans antialiased bg-gray-50 dark:bg-bgDark text-gray-900 dark:text-gray-100 transition-colors duration-300">
+        <ThemeProvider>
+          {session ? (
+            <AppShell>{children}</AppShell>
+          ) : (
+            children
+          )}
+        </ThemeProvider>
       </body>
     </html>
   )
