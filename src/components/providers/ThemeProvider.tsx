@@ -1,43 +1,49 @@
 'use client'
 
 import * as React from 'react'
+import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from 'next-themes'
 
 type Theme = 'light' | 'dark'
 
 interface ThemeContextType {
-    theme: Theme
-    toggleTheme: () => void
+  theme: Theme
+  toggleTheme: () => void
 }
 
 const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-    const [theme, setTheme] = React.useState<Theme>('dark')
+  return (
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem={false}
+      storageKey="milhas-pro-theme"
+      disableTransitionOnChange
+    >
+      <ThemeBridge>{children}</ThemeBridge>
+    </NextThemesProvider>
+  )
+}
 
-    React.useEffect(() => {
-        const saved = localStorage.getItem('milhas-pro-theme') as Theme | null
-        const pref = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-        const initial = saved || pref
-        setTheme(initial)
-        document.documentElement.classList.toggle('dark', initial === 'dark')
-    }, [])
+function ThemeBridge({ children }: { children: React.ReactNode }) {
+  const { theme, setTheme } = useNextTheme()
+  const resolvedTheme: Theme = theme === 'light' ? 'light' : 'dark'
 
-    const toggleTheme = () => {
-        const next = theme === 'dark' ? 'light' : 'dark'
-        setTheme(next)
-        localStorage.setItem('milhas-pro-theme', next)
-        document.documentElement.classList.toggle('dark', next === 'dark')
-    }
+  const toggleTheme = React.useCallback(() => {
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
+  }, [resolvedTheme, setTheme])
 
-    return (
-        <ThemeContext.Provider value={{ theme, toggleTheme }}>
-            {children}
-        </ThemeContext.Provider>
-    )
+  const value = React.useMemo(
+    () => ({ theme: resolvedTheme, toggleTheme }),
+    [resolvedTheme, toggleTheme]
+  )
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
 export const useTheme = () => {
-    const context = React.useContext(ThemeContext)
-    if (!context) throw new Error('useTheme must be used within ThemeProvider')
-    return context
+  const context = React.useContext(ThemeContext)
+  if (!context) throw new Error('useTheme must be used within ThemeProvider')
+  return context
 }
