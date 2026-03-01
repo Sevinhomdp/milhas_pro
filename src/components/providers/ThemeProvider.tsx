@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from 'next-themes'
+import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from '@/src/lib/next-themes'
 
 type Theme = 'light' | 'dark'
 
