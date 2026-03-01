@@ -4,79 +4,68 @@ import * as React from 'react'
 
 type Theme = 'light' | 'dark'
 
-interface NextThemesContextType {
-  theme: Theme
-  setTheme: (theme: Theme) => void
-}
-
-const NextThemesContext = React.createContext<NextThemesContextType | undefined>(undefined)
-
-interface ThemeProviderProps {
+type ThemeProviderProps = {
   children: React.ReactNode
-  attribute?: 'class'
-  defaultTheme?: Theme | 'system'
+  attribute?: 'class' | string
+  defaultTheme?: Theme
   enableSystem?: boolean
   storageKey?: string
   disableTransitionOnChange?: boolean
 }
 
-function getInitialTheme(defaultTheme: Theme, enableSystem: boolean, storageKey: string): Theme {
-  if (typeof window === 'undefined') return defaultTheme
-
-  const storedTheme = window.localStorage.getItem(storageKey)
-  if (storedTheme === 'light' || storedTheme === 'dark') return storedTheme
-
-  if (enableSystem) {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-  }
-
-  return defaultTheme
+type ThemeContextType = {
+  theme: Theme
+  setTheme: (theme: Theme) => void
 }
 
-function applyClassTheme(theme: Theme) {
-  const root = document.documentElement
-  root.classList.toggle('dark', theme === 'dark')
-  root.style.colorScheme = theme
+const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined)
+
+const getInitialTheme = (defaultTheme: Theme, storageKey: string, enableSystem: boolean): Theme => {
+  if (typeof window === 'undefined') return defaultTheme
+
+  const saved = window.localStorage.getItem(storageKey)
+  if (saved === 'light' || saved === 'dark') return saved
+
+  if (enableSystem && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark'
+
+  return defaultTheme
 }
 
 export function ThemeProvider({
   children,
   attribute = 'class',
-  defaultTheme = 'system',
-  enableSystem = true,
+  defaultTheme = 'dark',
+  enableSystem = false,
   storageKey = 'theme',
 }: ThemeProviderProps) {
-  const fallbackTheme: Theme = defaultTheme === 'light' ? 'light' : 'dark'
-  const [theme, setThemeState] = React.useState<Theme>(() =>
-    getInitialTheme(fallbackTheme, enableSystem, storageKey)
-  )
+  const [theme, setThemeState] = React.useState<Theme>(() => getInitialTheme(defaultTheme, storageKey, enableSystem))
 
   const setTheme = React.useCallback(
     (nextTheme: Theme) => {
       setThemeState(nextTheme)
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(storageKey, nextTheme)
-      }
     },
-    [storageKey]
+    [],
   )
 
   React.useEffect(() => {
+    const root = document.documentElement
+
     if (attribute === 'class') {
-      applyClassTheme(theme)
+      root.classList.remove('light', 'dark')
+      root.classList.add(theme)
     }
-  }, [attribute, theme])
+
+    root.style.colorScheme = theme
+    window.localStorage.setItem(storageKey, theme)
+  }, [attribute, storageKey, theme])
 
   const value = React.useMemo(() => ({ theme, setTheme }), [theme, setTheme])
 
-  return <NextThemesContext.Provider value={value}>{children}</NextThemesContext.Provider>
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
-export function useTheme() {
-  const context = React.useContext(NextThemesContext)
-  if (!context) {
-    throw new Error('useTheme must be used within ThemeProvider')
-  }
-
+export const useTheme = () => {
+  const context = React.useContext(ThemeContext)
+  if (!context) throw new Error('useTheme must be used within ThemeProvider')
   return context
 }
