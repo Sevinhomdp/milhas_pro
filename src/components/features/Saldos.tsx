@@ -198,7 +198,7 @@ export default function Saldos({ db, toast }: SaldosProps) {
                     </div>
                     <h3 className="font-bold text-slate-900 dark:text-white mb-2">Nenhum programa adicionado</h3>
                     <p className="text-sm text-slate-400 dark:text-slate-500">
-                        Clique em "Adicionar Programa" para começar a gerir seus pontos.
+                        Clique em &quot;Adicionar Programa&quot; para começar a gerir seus pontos.
                     </p>
                 </div>
             ) : (

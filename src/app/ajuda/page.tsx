@@ -133,7 +133,7 @@ export default function AjudaPage() {
 
                         {filteredFaqs.length === 0 && (
                             <div className="text-center py-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-[40px] shadow-sm">
-                                <p className="text-slate-400 font-bold uppercase tracking-widest">Nenhuma resposta encontrada para "{search}"</p>
+                                <p className="text-slate-400 font-bold uppercase tracking-widest">Nenhuma resposta encontrada para &quot;{search}&quot;</p>
                             </div>
                         )}
                     </div>

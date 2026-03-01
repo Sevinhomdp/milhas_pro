@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { ViewType } from '../types'
 import { Zap, X, RefreshCw } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
@@ -91,26 +91,21 @@ interface ProTipProps {
 }
 
 export default function ProTip({ view }: ProTipProps) {
-    const tips = TIPS[view] || DEFAULT_TIPS
+    const [hiddenByView, setHiddenByView] = useState<Record<string, boolean>>({})
+    const [shuffleSeed, setShuffleSeed] = useState(0)
 
-    const [visible, setVisible] = useState(true)
-    const [currentTip, setCurrentTip] = useState(() =>
-        tips[Math.floor(Math.random() * tips.length)]
-    )
-
-    // Nova dica aleatória ao trocar de aba
-    useEffect(() => {
-        const t = TIPS[view] || DEFAULT_TIPS
-        setCurrentTip(t[Math.floor(Math.random() * t.length)])
-        setVisible(true)
-    }, [view])
+    const currentTip = useMemo(() => {
+        const tips = TIPS[view] || DEFAULT_TIPS
+        const seed = `${view}-${shuffleSeed}`
+        const hash = Array.from(seed).reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) >>> 0, 0)
+        return tips[hash % tips.length]
+    }, [view, shuffleSeed])
 
     const shuffle = useCallback(() => {
-        const t = TIPS[view] || DEFAULT_TIPS
-        const available = t.filter(tip => tip.text !== currentTip.text)
-        const next = available[Math.floor(Math.random() * available.length)] || t[0]
-        setCurrentTip(next)
-    }, [view, currentTip])
+        setShuffleSeed(current => current + 1)
+    }, [])
+
+    const visible = !hiddenByView[view]
 
     if (!visible) return null
 
@@ -148,7 +143,7 @@ export default function ProTip({ view }: ProTipProps) {
                         <RefreshCw size={11} />
                     </button>
                     <button
-                        onClick={() => setVisible(false)}
+                        onClick={() => setHiddenByView(current => ({ ...current, [view]: true }))}
                         title="Fechar"
                         className="p-1.5 text-amber-500/40 hover:text-amber-500/70 hover:bg-amber-500/10 rounded-lg transition-all"
                     >
