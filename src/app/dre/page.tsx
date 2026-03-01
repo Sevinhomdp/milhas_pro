@@ -1,6 +1,7 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import DRE from '@/src/components/features/DRE'
+import { Database } from '@/src/types'
+import { DRERoute } from '@/src/components/routes/DRERoute'
 
 export default async function DrePage() {
   const supabase = await createClient()
@@ -12,7 +13,7 @@ export default async function DrePage() {
     supabase.from('metas').select('*').eq('user_id', user.id),
   ])
 
-  const db = {
+  const db: Database = {
     operacoes: operations || [],
     metas: metas || [],
     profile: null,
@@ -25,5 +26,5 @@ export default async function DrePage() {
     user_alerts: []
   }
 
-  return <DRE db={db as any} theme="dark" />
+  return <DRERoute db={db} />
 }
