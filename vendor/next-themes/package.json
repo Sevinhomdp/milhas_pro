@@ -1,0 +1,11 @@
+{
+  "name": "next-themes",
+  "version": "0.4.6",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "sideEffects": false,
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  }
+}

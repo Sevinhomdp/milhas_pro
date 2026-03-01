@@ -6,7 +6,10 @@ import { Database } from '@/src/types'
 
 export function ConfiguracoesRoute({ db, userEmail }: { db: Database; userEmail?: string }) {
   const toast = useRouteToast()
-  const { theme, toggleTheme } = useTheme()
+  const { resolvedTheme, setTheme } = useTheme()
+
+  const theme = resolvedTheme === 'light' ? 'light' : 'dark'
+  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
   return (
     <ConfiguracoesFeature
       db={db}
