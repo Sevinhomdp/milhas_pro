@@ -1,5 +1,19 @@
-import { Inteligencia } from '@/src/components/features/Inteligencia'
+'use client'
+import Inteligencia from '@/src/components/features/Inteligencia'
 
 export default function InteligenciaPage() {
-    return <div className="p-4 md:p-8"><Inteligencia /></div>
+    const db = {
+        profile: null,
+        programs: [],
+        saldos: [],
+        operacoes: [],
+        faturas: [],
+        cartoes: [],
+        metas: []
+    }
+    return (
+        <div className="p-4 md:p-8">
+            <Inteligencia db={db as any} toast={() => { }} theme="dark" />
+        </div>
+    )
 }

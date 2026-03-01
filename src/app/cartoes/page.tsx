@@ -1,6 +1,6 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Cartoes } from '@/src/components/features/Cartoes'
+import Cartoes from '@/src/components/features/Cartoes'
 
 export default async function CartoesPage() {
   const supabase = await createClient()
@@ -13,5 +13,16 @@ export default async function CartoesPage() {
     .eq('user_id', user.id)
     .order('nome', { ascending: true })
 
-  return <Cartoes cartoes={cartoes || []} />
+  const db = {
+    cartoes: cartoes || [],
+    profile: null,
+    programs: [],
+    saldos: [],
+    operacoes: [],
+    faturas: [],
+    metas: []
+  }
+
+  return <Cartoes db={db as any} toast={() => { }} />
 }
+

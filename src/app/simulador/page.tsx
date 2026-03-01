@@ -1,5 +1,6 @@
-import { Simulador } from '@/src/components/features/Simulador'
+'use client'
+import Simulador from '@/src/components/features/Simulador'
 
 export default function SimuladorPage() {
-  return <Simulador />
+  return <Simulador theme="dark" />
 }

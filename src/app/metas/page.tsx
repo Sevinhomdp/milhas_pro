@@ -1,6 +1,6 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Metas } from '@/src/components/features/Metas'
+import Metas from '@/src/components/features/Metas'
 
 export default async function MetasPage() {
   const supabase = await createClient()
@@ -12,5 +12,15 @@ export default async function MetasPage() {
     supabase.from('operacoes').select('*').eq('user_id', user.id),
   ])
 
-  return <Metas metas={metas || []} operacoes={operacoes || []} />
+  const db = {
+    metas: metas || [],
+    operacoes: operacoes || [],
+    profile: null,
+    programs: [],
+    saldos: [],
+    faturas: [],
+    cartoes: []
+  }
+
+  return <Metas db={db as any} toast={() => { }} theme="dark" />
 }
