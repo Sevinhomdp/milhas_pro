@@ -1,6 +1,7 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Operacoes from '@/src/components/features/Operacoes'
+import { OperacoesRoute } from '@/src/components/routes/OperacoesRoute'
+import { Database } from '@/src/types'
 
 export default async function OperacoesPage() {
   const supabase = await createClient()
@@ -17,7 +18,7 @@ export default async function OperacoesPage() {
     supabase.from('programs').select('*').or(`user_id.is.null,user_id.eq.${user.id}`).order('name', { ascending: true })
   ])
 
-  const db = {
+  const db: Database = {
     operacoes: (operations || []).map((o: any) => ({
       ...o,
       programa: o.program?.name || '?'
@@ -33,5 +34,5 @@ export default async function OperacoesPage() {
     user_alerts: []
   }
 
-  return <Operacoes db={db as any} toast={() => { }} theme="dark" />
+  return <OperacoesRoute db={db} />
 }

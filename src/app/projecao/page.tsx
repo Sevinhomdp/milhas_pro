@@ -1,6 +1,7 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Projecao from '@/src/components/features/Projecao'
+import { ProjecaoRoute } from '@/src/components/routes/ProjecaoRoute'
+import { Database } from '@/src/types'
 
 export default async function ProjecaoPage() {
   const supabase = await createClient()
@@ -13,7 +14,7 @@ export default async function ProjecaoPage() {
     supabase.from('cartoes').select('*').eq('user_id', user.id),
   ])
 
-  const db = {
+  const db: Database = {
     operacoes: operations || [],
     faturas: faturas || [],
     cartoes: cartoes || [],
@@ -26,5 +27,5 @@ export default async function ProjecaoPage() {
     user_alerts: []
   }
 
-  return <Projecao db={db as any} toast={() => { }} theme="dark" />
+  return <ProjecaoRoute db={db} />
 }

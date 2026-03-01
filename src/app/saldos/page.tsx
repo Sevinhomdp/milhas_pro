@@ -1,6 +1,7 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Saldos from '@/src/components/features/Saldos'
+import { Database } from '@/src/types'
+import { SaldosRoute } from '@/src/components/routes/SaldosRoute'
 
 export default async function SaldosPage() {
   const supabase = await createClient()
@@ -24,7 +25,7 @@ export default async function SaldosPage() {
     custo_medio: Number(s.custo_medio) || 0,
   }))
 
-  const db = {
+  const db: Database = {
     programs: programs || [],
     saldos: formattedSaldos,
     profile: null,
@@ -37,5 +38,5 @@ export default async function SaldosPage() {
     user_alerts: []
   }
 
-  return <Saldos db={db as any} toast={() => { }} theme="dark" />
+  return <SaldosRoute db={db} />
 }

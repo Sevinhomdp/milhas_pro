@@ -1,13 +1,14 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Configuracoes from '@/src/components/features/Configuracoes'
+import { ConfiguracoesRoute } from '@/src/components/routes/ConfiguracoesRoute'
+import { Database } from '@/src/types'
 
 export default async function ConfiguracoesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const db = {
+  const db: Database = {
     profile: null,
     programs: [],
     saldos: [],
@@ -20,5 +21,5 @@ export default async function ConfiguracoesPage() {
     user_alerts: []
   }
 
-  return <Configuracoes db={db as any} toast={() => { }} theme="dark" toggleTheme={() => { }} userEmail={user.email} />
+  return <ConfiguracoesRoute db={db} userEmail={user.email} />
 }
