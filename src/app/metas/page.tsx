@@ -1,6 +1,6 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Metas from '@/src/components/features/Metas'
+import { MetasRoute } from '@/src/components/routes/MetasRoute'
 
 export default async function MetasPage() {
   const supabase = await createClient()
@@ -25,5 +25,5 @@ export default async function MetasPage() {
     user_alerts: []
   }
 
-  return <Metas db={db as any} toast={() => { }} theme="dark" />
+  return <MetasRoute db={db as any} />
 }
