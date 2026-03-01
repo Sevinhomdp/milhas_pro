@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { HelpCircle, Book, MessageSquare, Shield, ArrowLeft, ChevronDown, Search, ExternalLink } from 'lucide-react'
 import { Button } from '@/src/components/ui/Button'
 import { cn } from '@/src/lib/utils'
@@ -54,9 +55,9 @@ export default function AjudaPage() {
             <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-white/5 h-20">
                 <div className="max-w-5xl mx-auto h-full px-6 flex items-center justify-between">
                     <div className="flex items-center gap-6">
-                        <a href="/" className="p-2.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-2xl transition-all text-slate-400">
+                        <Link href="/" className="p-2.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-2xl transition-all text-slate-400">
                             <ArrowLeft size={20} />
-                        </a>
+                        </Link>
                         <div className="font-black text-xl tracking-tighter">
                             <span className="text-slate-900 dark:text-white uppercase">Milhas</span>
                             <span className="text-amber-500 uppercase"> Pro</span>
