@@ -1,7 +1,7 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Inteligencia from '@/src/components/features/Inteligencia'
 import { Database } from '@/src/types'
+import { InteligenciaRoute } from '@/src/components/routes/InteligenciaRoute'
 
 export default async function InteligenciaPage() {
   const supabase = await createClient()
@@ -14,23 +14,10 @@ export default async function InteligenciaPage() {
     { data: marketNews },
     { data: userAlerts },
   ] = await Promise.all([
-    supabase
-      .from('balances')
-      .select('*, programs(*)')
-      .eq('user_id', user.id),
-    supabase
-      .from('market_prices')
-      .select('*')
-      .order('timestamp', { ascending: true }),
-    supabase
-      .from('market_news')
-      .select('*')
-      .eq('ativa', true)
-      .order('data_publicacao', { ascending: false }),
-    supabase
-      .from('user_alerts')
-      .select('*')
-      .eq('user_id', user.id),
+    supabase.from('balances').select('*, programs(*)').eq('user_id', user.id),
+    supabase.from('market_prices').select('*').order('timestamp', { ascending: true }),
+    supabase.from('market_news').select('*').eq('ativa', true).order('data_publicacao', { ascending: false }),
+    supabase.from('user_alerts').select('*').eq('user_id', user.id),
   ])
 
   const formattedSaldos = (saldos || []).map((s: any) => ({
@@ -57,7 +44,7 @@ export default async function InteligenciaPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <Inteligencia db={db as Database} toast={() => {}} theme="dark" />
+      <InteligenciaRoute db={db as Database} />
     </div>
   )
 }
