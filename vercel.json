@@ -2,15 +2,7 @@
     "crons": [
         {
             "path": "/api/fetch-market-prices",
-            "schedule": "0 2 * * *"
-        },
-        {
-            "path": "/api/fetch-market-news",
-            "schedule": "0 3 * * *"
-        },
-        {
-            "path": "/api/check-alerts",
-            "schedule": "0 4 * * *"
+
         }
     ],
     "rewrites": [
