@@ -1,5 +1,5 @@
 import { createClient } from '@/src/lib/supabase/server'
-import DashboardClient from '@/src/components/DashboardClient'
+import { DashboardClientRoute } from '@/src/components/routes/DashboardClientRoute'
 import { Database } from '@/src/types'
 
 export default async function Page() {
@@ -59,7 +59,7 @@ export default async function Page() {
 
 
   return (
-    <DashboardClient
+    <DashboardClientRoute
       initialDb={initialDb}
       user={user}
     />
