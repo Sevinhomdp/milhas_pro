@@ -54,15 +54,12 @@ export default function DashboardClient({ initialDb, user }: DashboardClientProp
     const [db, setDb] = useState<Database>(initialDb)
     const [view, setView] = useState<ViewType>('dashboard')
     const [sidebarOpen, setSidebarOpen] = useState(true)
-    const [theme, setTheme] = useState<'light' | 'dark'>('dark')
+    const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+        if (typeof document === 'undefined') return 'dark'
+        return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+    })
     const [confirmModal, setConfirmModal] = useState<{ title: string; msg: string; onConfirm: () => void } | null>(null)
     const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null)
-
-    // 1.3 — Sincronização de tema (anti-flash)
-    useEffect(() => {
-        const isDark = document.documentElement.classList.contains('dark')
-        setTheme(isDark ? 'dark' : 'light')
-    }, [])
 
     useEffect(() => {
         localStorage.setItem('milhas-pro-theme', theme)
