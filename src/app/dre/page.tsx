@@ -7,19 +7,22 @@ export default async function DrePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: operacoes }, { data: metas }] = await Promise.all([
-    supabase.from('operacoes').select('*').eq('user_id', user.id).order('date', { ascending: false }),
+  const [{ data: operations }, { data: metas }] = await Promise.all([
+    supabase.from('operations').select('*').eq('user_id', user.id).order('date', { ascending: false }),
     supabase.from('metas').select('*').eq('user_id', user.id),
   ])
 
   const db = {
-    operacoes: operacoes || [],
+    operacoes: operations || [],
     metas: metas || [],
     profile: null,
     programs: [],
     saldos: [],
     faturas: [],
-    cartoes: []
+    cartoes: [],
+    market_prices: [],
+    market_news: [],
+    user_alerts: []
   }
 
   return <DRE db={db as any} theme="dark" />

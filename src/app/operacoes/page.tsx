@@ -12,19 +12,25 @@ export default async function OperacoesPage() {
     { data: cartoes },
     { data: programs }
   ] = await Promise.all([
-    supabase.from('operacoes').select('*').eq('user_id', user.id).order('date', { ascending: false }),
+    supabase.from('operations').select('*, program:programs(*)').eq('user_id', user.id).order('date', { ascending: false }),
     supabase.from('cartoes').select('*').eq('user_id', user.id).order('nome', { ascending: true }),
     supabase.from('programs').select('*').or(`user_id.is.null,user_id.eq.${user.id}`).order('name', { ascending: true })
   ])
 
   const db = {
-    operacoes: operations || [],
+    operacoes: (operations || []).map((o: any) => ({
+      ...o,
+      programa: o.program?.name || '?'
+    })),
     cartoes: cartoes || [],
     programs: programs || [],
     profile: null,
     saldos: [],
     faturas: [],
-    metas: []
+    metas: [],
+    market_prices: [],
+    market_news: [],
+    user_alerts: []
   }
 
   return <Operacoes db={db as any} toast={() => { }} theme="dark" />

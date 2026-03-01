@@ -20,7 +20,10 @@ export default async function CartoesPage() {
     saldos: [],
     operacoes: [],
     faturas: [],
-    metas: []
+    metas: [],
+    market_prices: [],
+    market_news: [],
+    user_alerts: []
   }
 
   return <Cartoes db={db as any} toast={() => { }} />

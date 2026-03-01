@@ -278,5 +278,20 @@ export async function alterarSenha(novaSenha: string) {
   if (error) throw new Error(error.message)
 }
 
-// Legacy alias for backward compatibility — FormData version removed
-// These are now typed parameter functions above
+export async function getMarketPrices() {
+  const { supabase } = await getUser()
+  const { data } = await supabase.from('market_prices').select('*').order('timestamp', { ascending: false }).limit(50)
+  return data || []
+}
+
+export async function getMarketNews() {
+  const { supabase } = await getUser()
+  const { data } = await supabase.from('market_news').select('*').eq('ativa', true).order('data_publicacao', { ascending: false }).limit(20)
+  return data || []
+}
+
+export async function getUserAlerts() {
+  const { supabase, user } = await getUser()
+  const { data } = await supabase.from('user_alerts').select('*').eq('user_id', user.id)
+  return data || []
+}

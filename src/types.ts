@@ -107,38 +107,34 @@ export interface ProgramaSaldo {
 }
 
 
-export interface HistoricoPreco {
+export interface MarketPrice {
   id: string;
   programa: string;
-  plataforma: string;
-  prazo_recebimento: string;
-  valor_milheiro: number;
+  valor: number;
+  plataforma: string | null;
+  prazo_recebimento: string | null;
   tendencia: 'UP' | 'DOWN' | 'STABLE';
-  created_at: string;
+  timestamp: string;
 }
 
-export interface PromocaoRadar {
+export interface MarketNews {
   id: string;
   titulo: string;
-  programa_origem: string | null;
-  programa_destino: string | null;
-  bonus_percentual: number | null;
-  data_validade: string | null;
-  link_oficial: string | null;
-  categoria: 'TRANSFERENCIA' | 'BUMERANGUE' | 'BONIFICADA' | 'COMPRA';
+  link: string;
+  categoria: 'COMPRA_BONIFICADA' | 'TRANSFERENCIA_BONUS' | 'PROMOCAO_PASSAGEM' | 'OUTROS';
+  data_publicacao: string;
+  importancia_score: number;
+  resumo_ai: string | null;
   ativa: boolean;
   created_at: string;
 }
 
-export interface AlertaConfig {
+export interface UserAlert {
   id: string;
   user_id: string;
-  tipo_alerta: 'CPM_THRESHOLD' | 'NOVA_PROMO' | 'FATURA_VENCENDO' | 'EXPIRACAO_MILHAS';
-  valor_gatilho: number | null;
-  programas_foco: string[];
-  notificacao_email: boolean;
-  notificacao_push: boolean;
-  ultimo_disparo: string | null;
+  trigger_value: number;
+  status: 'ACTIVE' | 'TRIGGERED' | 'DISABLED';
+  tipo_alerta: 'CPM_DROP' | 'NEW_BONUS' | 'FATURA_OVERDUE';
   created_at: string;
 }
 
@@ -150,9 +146,9 @@ export interface Database {
   faturas: FaturaParcela[];
   cartoes: Cartao[];
   metas: Meta[];
-  historico_precos: HistoricoPreco[];
-  promocoes_radar: PromocaoRadar[];
-  alertas_config: AlertaConfig[];
+  market_prices: MarketPrice[];
+  market_news: MarketNews[];
+  user_alerts: UserAlert[];
 }
 
 

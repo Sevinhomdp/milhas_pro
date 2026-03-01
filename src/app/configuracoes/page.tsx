@@ -14,7 +14,10 @@ export default async function ConfiguracoesPage() {
     operacoes: [],
     faturas: [],
     cartoes: [],
-    metas: []
+    metas: [],
+    market_prices: [],
+    market_news: [],
+    user_alerts: []
   }
 
   return <Configuracoes db={db as any} toast={() => { }} theme="dark" toggleTheme={() => { }} userEmail={user.email} />
