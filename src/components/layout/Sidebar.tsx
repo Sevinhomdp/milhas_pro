@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "motion/react"
 import {
@@ -170,7 +171,7 @@ export function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean, setIsOpen: (v:
             !isOpen && "justify-center"
           )}>
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="Avatar" className="h-8 w-8 rounded-lg object-cover" />
+              <Image src={profile.avatar_url} alt="Avatar" width={32} height={32} className="h-8 w-8 rounded-lg object-cover" unoptimized />
             ) : (
               <div className="h-8 w-8 rounded-lg bg-accent/20 flex items-center justify-center text-accent font-bold text-xs">
                 {profile?.full_name?.charAt(0) || 'U'}
