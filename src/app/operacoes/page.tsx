@@ -1,6 +1,6 @@
 import { createClient } from '@/src/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Operacoes from '@/src/components/features/Operacoes'
+import { OperacoesRoute } from '@/src/components/routes/OperacoesRoute'
 
 export default async function OperacoesPage() {
   const supabase = await createClient()
@@ -33,5 +33,5 @@ export default async function OperacoesPage() {
     user_alerts: []
   }
 
-  return <Operacoes db={db as any} toast={() => { }} theme="dark" />
+  return <OperacoesRoute db={db as any} />
 }
