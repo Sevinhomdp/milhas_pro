@@ -89,10 +89,21 @@ export default function Inteligencia({ db, toast }: InteligenciaProps) {
 // 1. HISTÓRICO DE PREÇOS (Market Analytics)
 function MarketAnalytics({ db }: { db: Database }) {
     const [filterProg, setFilterProg] = React.useState('SMILES')
+    const [filterPlat, setFilterPlat] = React.useState('TODAS')
+    const [filterPrazo, setFilterPrazo] = React.useState('TODOS')
 
-    // Processar dados para o gráfico baseado no filtro
+    // Extrair opções únicas do DB para os filtros
+    const platforms = ['TODAS', ...Array.from(new Set(db.historico_precos.map(p => p.plataforma).filter(Boolean)))]
+    const periods = ['TODOS', ...Array.from(new Set(db.historico_precos.map(p => p.prazo_recebimento).filter(Boolean)))]
+
+    // Processar dados para o gráfico baseado nos filtros
     const chartData = db.historico_precos
-        .filter(p => p.programa === filterProg)
+        .filter(p => {
+            const matchProg = p.programa === filterProg
+            const matchPlat = filterPlat === 'TODAS' || p.plataforma === filterPlat
+            const matchPrazo = filterPrazo === 'TODOS' || p.prazo_recebimento === filterPrazo
+            return matchProg && matchPlat && matchPrazo
+        })
         .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
         .map(p => ({
             name: new Date(p.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
@@ -103,21 +114,41 @@ function MarketAnalytics({ db }: { db: Database }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex gap-2 pb-2 overflow-x-auto no-scrollbar">
-                {['SMILES', 'AZUL', 'LATAM', 'TAP'].map(prog => (
-                    <button
-                        key={prog}
-                        onClick={() => setFilterProg(prog)}
-                        className={cn(
-                            "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
-                            filterProg === prog
-                                ? "bg-amber-500 text-slate-950"
-                                : "bg-slate-100 dark:bg-white/5 text-slate-500"
-                        )}
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex gap-2 pb-2 overflow-x-auto no-scrollbar flex-1">
+                    {['SMILES', 'AZUL', 'LATAM', 'TAP'].map(prog => (
+                        <button
+                            key={prog}
+                            onClick={() => setFilterProg(prog)}
+                            className={cn(
+                                "px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                                filterProg === prog
+                                    ? "bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20"
+                                    : "bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                            )}
+                        >
+                            {prog}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="flex gap-3 items-center">
+                    <select
+                        value={filterPlat}
+                        onChange={(e) => setFilterPlat(e.target.value)}
+                        className="bg-slate-100 dark:bg-white/5 border-none rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 focus:ring-1 focus:ring-amber-500 outline-none cursor-pointer"
                     >
-                        {prog}
-                    </button>
-                ))}
+                        {platforms.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+
+                    <select
+                        value={filterPrazo}
+                        onChange={(e) => setFilterPrazo(e.target.value)}
+                        className="bg-slate-100 dark:bg-white/5 border-none rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 focus:ring-1 focus:ring-amber-500 outline-none cursor-pointer"
+                    >
+                        {periods.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                </div>
             </div>
 
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-8 rounded-3xl shadow-sm relative overflow-hidden group">

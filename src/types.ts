@@ -111,7 +111,7 @@ export interface HistoricoPreco {
   id: string;
   programa: string;
   plataforma: string;
-  prazo_recebimento: number;
+  prazo_recebimento: string;
   valor_milheiro: number;
   tendencia: 'UP' | 'DOWN' | 'STABLE';
   created_at: string;
