@@ -1,14 +1,20 @@
 export const PROGRAMAS_MILHAS = [
   'Livelo',
   'Esfera',
-  'Smiles',
   'Latam Pass',
+  'Smiles',
   'TudoAzul',
   'TAP Miles&Go',
   'Iberia Plus',
   'AAdvantage',
+  'Inter Loop',
+  'C6 Átomos',
+  'Azul',
   'Outro'
 ];
+
+export const PROGS = PROGRAMAS_MILHAS;
+
 
 export const TIPOS_OPERACAO = [
   { value: 'COMPRA', label: 'Compra de Milhas/Pontos' },

@@ -84,3 +84,37 @@ export interface Meta {
   margem_desejada?: number;
   created_at: string;
 }
+
+export type ViewType =
+  | 'dashboard'
+  | 'saldos'
+  | 'operacoes'
+  | 'dre'
+  | 'projecao'
+  | 'simulador'
+  | 'cartoes'
+  | 'metas'
+  | 'mercado'
+  | 'configuracoes';
+
+export interface ProgramaSaldo {
+  program_id: string;
+  nome_programa: string;
+  saldo_atual: number;
+  ajuste_manual: number | null;
+  usar_ajuste_manual: boolean;
+  custo_medio: number;
+}
+
+
+export interface Database {
+  profile: Profile | null;
+  programs: Program[];
+  saldos: ProgramaSaldo[];
+  operacoes: Operation[];
+  faturas: FaturaParcela[];
+  cartoes: Cartao[];
+  metas: Meta[];
+}
+
+

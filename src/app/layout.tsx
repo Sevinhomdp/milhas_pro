@@ -18,25 +18,36 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const { data: { session } } = await supabase.auth.getSession()
 
   return (
-    <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
+        {/*
+         * CRÍTICO: Primeiro elemento do <head>.
+         * Executa síncronamente antes de qualquer renderização.
+         * Elimina o flash de tema incorreto (FOUC — Flash of Unstyled Content).
+         */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              try {
-                var t = localStorage.getItem('theme');
-                if (t === 'light') {
-                  document.documentElement.classList.remove('dark');
-                  document.documentElement.classList.add('light');
-                } else {
+              (function() {
+                try {
+                  var t = localStorage.getItem('milhas-pro-theme');
+                  var isDark = t ? t === 'dark' : true;
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.style.colorScheme = 'dark';
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.style.colorScheme = 'light';
+                  }
+                } catch (e) {
                   document.documentElement.classList.add('dark');
                 }
-              } catch(e) {}
-            `
+              })();
+            `,
           }}
         />
       </head>
-      <body className="font-sans antialiased bg-gray-50 dark:bg-bgDark text-gray-900 dark:text-gray-100 transition-colors duration-300">
+      <body className={`${inter.className} min-h-screen`}>
         <ThemeProvider>
           {session ? (
             <AppShell>{children}</AppShell>

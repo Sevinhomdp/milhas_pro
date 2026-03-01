@@ -6,12 +6,26 @@ import { Badge } from '../ui/Badge'
 
 const fmtCur = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-export function Simulador() {
-    const [milhas, setMilhas] = React.useState(50000)
+export interface SimuladorProps {
+    theme?: 'light' | 'dark'
+}
+
+export default function Simulador({ theme }: SimuladorProps) {
+    const [spending, setSpending] = React.useState(1000)
+    const [pointsPerDollar, setPointsPerDollar] = React.useState(2)
+    const [dollarRate, setDollarRate] = React.useState(5.0)
+    const [milhas, setMilhas] = React.useState(400) // Derived or manual
     const [bonus, setBonus] = React.useState(100)
-    const [custo, setCusto] = React.useState(900)
+    const [custo, setCusto] = React.useState(1000)
     const [taxas, setTaxas] = React.useState(0)
     const [valorVenda, setValorVenda] = React.useState(1400)
+
+    // Sync milhas if spending changes (optional but helpful)
+    React.useEffect(() => {
+        const generatedMiles = (spending / dollarRate) * pointsPerDollar
+        setMilhas(Math.floor(generatedMiles))
+        setCusto(spending)
+    }, [spending, pointsPerDollar, dollarRate])
 
     const milhasFinais = Math.floor(milhas * (1 + bonus / 100))
     const custoTotal = custo + taxas
@@ -59,12 +73,24 @@ export function Simulador() {
                         🛠 Parâmetros de Entrada
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div><label className="field-label">Milhas Base</label><input type="number" value={milhas} onChange={e => setMilhas(Number(e.target.value))} className={inputCls} min="0" /></div>
+                        <div className="sm:col-span-2">
+                            <label className="field-label">Gasto no Cartão (R$)</label>
+                            <input type="number" value={spending} onChange={e => setSpending(Number(e.target.value))} className={inputCls} min="0" />
+                        </div>
+                        <div><label className="field-label">Pontos por Dólar</label><input type="number" value={pointsPerDollar} onChange={e => setPointsPerDollar(Number(e.target.value))} className={inputCls} step="0.1" min="0" /></div>
+                        <div><label className="field-label">Cotação Dólar (R$)</label><input type="number" value={dollarRate} onChange={e => setDollarRate(Number(e.target.value))} className={inputCls} step="0.01" min="1" /></div>
+
+                        <div className="sm:col-span-2 border-t border-gray-100 dark:border-white/5 pt-4 mt-2">
+                            <label className="field-label">Milhas Geradas (Base)</label>
+                            <input type="number" value={milhas} onChange={e => setMilhas(Number(e.target.value))} className={inputCls} min="0" />
+                        </div>
+
                         <div><label className="field-label">Bônus da Promo (%)</label><input type="number" value={bonus} onChange={e => setBonus(Number(e.target.value))} className={inputCls} min="0" max="1000" /></div>
                         <div><label className="field-label">Custo do Bloco (R$)</label><input type="number" value={custo} onChange={e => setCusto(Number(e.target.value))} className={inputCls} step="0.01" min="0" /></div>
                         <div><label className="field-label">Taxas Extras (R$)</label><input type="number" value={taxas} onChange={e => setTaxas(Number(e.target.value))} className={inputCls} step="0.01" min="0" /></div>
-                        <div className="sm:col-span-2"><label className="field-label">Previsão de Venda Total (R$)</label><input type="number" value={valorVenda} onChange={e => setValorVenda(Number(e.target.value))} className={inputCls} step="0.01" min="0" /></div>
+                        <div><label className="field-label">Previsão de Venda Total (R$)</label><input type="number" value={valorVenda} onChange={e => setValorVenda(Number(e.target.value))} className={inputCls} step="0.01" min="0" /></div>
                     </div>
+
                     {bonus > 0 && (
                         <div className="card p-4 bg-accent/5 border-dashed border-accent/20 flex justify-between items-center">
                             <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Milhas Acumuladas</span>

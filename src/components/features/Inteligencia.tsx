@@ -1,51 +1,61 @@
 'use client'
 
 import * as React from 'react'
-import { TrendingUp, Megaphone, Calculator, Bell, BarChart3, ArrowUpRight, ArrowDownRight, Info, Zap, Search } from 'lucide-react'
+import { TrendingUp, Megaphone, Calculator, Bell, BarChart3, ArrowUpRight, ArrowDownRight, Info, Zap, Search, Clock } from 'lucide-react'
 import { Button } from '@/src/components/ui/Button'
 import { Badge } from '@/src/components/ui/Badge'
+import { Database } from '@/src/types'
 import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Cell
 } from 'recharts'
+import { cn, formatCurrency } from '@/src/lib/utils'
+
+interface InteligenciaProps {
+    db: Database
+    toast: (msg: string, type?: any) => void
+    theme?: 'light' | 'dark'
+}
 
 type TabId = 'historico' | 'promocoes' | 'simulador' | 'alertas'
 
-export function Inteligencia() {
+export default function Inteligencia({ db, toast }: InteligenciaProps) {
     const [activeTab, setActiveTab] = React.useState<TabId>('historico')
 
     const tabs = [
-        { id: 'historico', label: 'Histórico de Preços', icon: BarChart3 },
-        { id: 'promocoes', label: 'Radar de Promoções', icon: Megaphone },
-        { id: 'simulador', label: 'ROI Inteligente', icon: Calculator },
-        { id: 'alertas', label: 'Alertas Smart', icon: Bell },
+        { id: 'historico', label: 'Preços', icon: BarChart3 },
+        { id: 'promocoes', label: 'Promoções', icon: Megaphone },
+        { id: 'simulador', label: 'ROI', icon: Calculator },
+        { id: 'alertas', label: 'Alertas', icon: Bell },
     ]
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-8 pb-20">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 dark:text-white">Inteligência de Mercado</h1>
-                    <p className="text-sm text-gray-500 mt-1">Dados em tempo real para maximizar seus lucros.</p>
+                    <p className="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-1.5">Inteligência Competitiva</p>
+                    <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white leading-none">Market Intelligence</h1>
                 </div>
 
-                <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-2xl border border-gray-200 dark:border-borderDark">
+                <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-2xl border border-slate-200 dark:border-white/10">
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as TabId)}
-                            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all ${activeTab === tab.id
-                                ? 'bg-white dark:bg-accent text-accent dark:text-primary shadow-sm'
-                                : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-                                }`}
+                            className={cn(
+                                "flex items-center gap-2 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300",
+                                activeTab === tab.id
+                                    ? "bg-white dark:bg-amber-500 text-amber-500 dark:text-slate-950 shadow-sm"
+                                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            )}
                         >
                             <tab.icon className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">{tab.label}</span>
+                            <span>{tab.label}</span>
                         </button>
                     ))}
                 </div>
             </div>
 
-            <div className="animate-fadeInUp">
+            <div className="animate-fadeIn">
                 {activeTab === 'historico' && <HistoricoPrecos />}
                 {activeTab === 'promocoes' && <RadarPromocoes />}
                 {activeTab === 'simulador' && <SimuladorROI />}
@@ -67,49 +77,49 @@ function HistoricoPrecos() {
 
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <PriceStat label="Smiles" value="R$ 15,50" change="-8.2%" status="down" />
-                <PriceStat label="Azul" value="R$ 19,80" change="+4.1%" status="up" />
-                <PriceStat label="LATAM Pass" value="R$ 25,20" change="+2.5%" status="up" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <PriceStat label="Smiles" value="R$ 15,50" change="-8.2%" status="down" color="#f97316" />
+                <PriceStat label="TudoAzul" value="R$ 19,80" change="+4.1%" status="up" color="#3b82f6" />
+                <PriceStat label="LATAM Pass" value="R$ 25,20" change="+2.5%" status="up" color="#ef4444" />
             </div>
 
-            <div className="card p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="field-label mb-0">Variação do Milheiro (6 meses)</h3>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-8 rounded-3xl shadow-sm">
+                <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+                    <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest leading-none">Evolução de Mercado</h3>
                     <div className="flex gap-4">
-                        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-orange-500" /> <span className="text-[10px] text-gray-500">Smiles</span></div>
-                        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-blue-500" /> <span className="text-[10px] text-gray-500">Azul</span></div>
-                        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /> <span className="text-[10px] text-gray-500">LATAM</span></div>
+                        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-orange-500" /> <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Smiles</span></div>
+                        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500" /> <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Azul</span></div>
+                        <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-red-500" /> <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">LATAM</span></div>
                     </div>
                 </div>
-                <div className="h-[300px]">
+                <div className="h-[320px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={data}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                            <XAxis dataKey="data" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#88888811" vertical={false} />
+                            <XAxis dataKey="data" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
                             <YAxis
-                                tick={{ fill: '#94a3b8', fontSize: 11 }}
+                                tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }}
                                 axisLine={false}
                                 tickLine={false}
                                 domain={['dataMin - 2', 'dataMax + 2']}
                                 tickFormatter={(v) => `R$${v}`}
                             />
                             <Tooltip
-                                contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12 }}
+                                contentStyle={{ background: '#0f172a', border: 'none', borderRadius: 16, boxShadow: '0 20px 40px rgba(0,0,0,0.3)', fontWeight: 'bold' }}
                                 labelStyle={{ color: '#d4af37', marginBottom: 4 }}
                             />
-                            <Line type="monotone" dataKey="smiles" stroke="#f97316" strokeWidth={3} dot={{ r: 4 }} />
-                            <Line type="monotone" dataKey="azul" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4 }} />
-                            <Line type="monotone" dataKey="latam" stroke="#ef4444" strokeWidth={3} dot={{ r: 4 }} />
+                            <Line type="monotone" dataKey="smiles" stroke="#f97316" strokeWidth={4} dot={{ r: 6, fill: '#f97316', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8 }} />
+                            <Line type="monotone" dataKey="azul" stroke="#3b82f6" strokeWidth={4} dot={{ r: 6, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8 }} />
+                            <Line type="monotone" dataKey="latam" stroke="#ef4444" strokeWidth={4} dot={{ r: 6, fill: '#ef4444', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 8 }} />
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
             </div>
 
-            <div className="card p-4 bg-accent/5 border border-accent/10 flex items-start gap-3">
-                <Info className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                <p className="text-[11px] text-gray-500 leading-relaxed">
-                    <strong>Análise Milhas Pro:</strong> O mercado de LATAM Pass apresentou forte recuperação em Dezembro devido à alta demanda por passagens internacionais de final de ano. Smiles segue estável nas casas dos R$ 15,00.
+            <div className="bg-blue-500/5 border border-blue-500/10 p-5 rounded-3xl flex items-start gap-4">
+                <Info size={18} className="text-blue-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                    <strong className="text-slate-900 dark:text-slate-200">Insights do Algoritmo:</strong> Tendência de queda para LATAM nas próximas 2 semanas devido à saturação de promoções bonificadas recentes. Smiles apresenta estabilidade incomum.
                 </p>
             </div>
         </div>
@@ -125,20 +135,21 @@ function RadarPromocoes() {
     ]
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {promos.map(p => (
-                <div key={p.id} className="card p-5 group hover:border-accent/40 transition-all duration-300">
-                    <div className="flex justify-between items-start mb-4">
-                        <Badge variant={p.hot ? 'danger' : 'default'}>{p.category}</Badge>
-                        <span className="text-[10px] font-bold text-gray-500 flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3" /> Expira em {p.expires}
+                <div key={p.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-8 rounded-3xl shadow-sm group hover:shadow-2xl transition-all duration-500 relative overflow-hidden">
+                    <div className="flex justify-between items-start mb-6">
+                        <Badge variant={p.hot ? 'danger' : 'COMPRA'}>{p.category.toUpperCase()}</Badge>
+                        <span className="text-[10px] font-black text-slate-400 flex items-center gap-1.5 uppercase tracking-widest">
+                            <Clock size={12} className="text-amber-500" /> {p.expires}
                         </span>
                     </div>
-                    <h3 className="text-lg font-black text-gray-900 dark:text-white group-hover:text-accent transition-colors">{p.title}</h3>
-                    <p className="text-accent font-black text-2xl mt-1">{p.bonus}</p>
-                    <div className="mt-4 flex gap-2">
-                        <Button variant="secondary" size="sm" className="w-full">Ver Análise</Button>
-                        <Button variant="primary" size="sm" className="w-full">Ir p/ Site</Button>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors leading-tight uppercase tracking-tight">{p.title}</h3>
+                    <p className="text-amber-500 font-black text-4xl mt-3 tracking-tighter">{p.bonus}</p>
+
+                    <div className="mt-8 grid grid-cols-2 gap-3">
+                        <Button variant="secondary" className="h-10 text-[10px] uppercase font-black tracking-widest">Análise</Button>
+                        <Button className="h-10 text-[10px] uppercase font-black tracking-widest">Ir p/ Site</Button>
                     </div>
                 </div>
             ))}
@@ -148,16 +159,18 @@ function RadarPromocoes() {
 
 function SimuladorROI() {
     return (
-        <div className="card p-8 text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent mx-auto">
-                <Calculator className="w-8 h-8" />
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-16 rounded-3xl text-center shadow-sm space-y-6">
+            <div className="w-20 h-20 rounded-3xl bg-amber-500/10 flex items-center justify-center text-amber-500 mx-auto">
+                <Calculator size={32} />
             </div>
-            <h2 className="text-xl font-black text-gray-900 dark:text-white">Calculadora de ROI Inteligente</h2>
-            <p className="text-gray-500 max-w-md mx-auto text-sm">
-                Estamos integrando nosso algoritmo que cruza os preços de mercado atuais com suas promoções para te dar a margem real em segundos.
-            </p>
-            <div className="pt-4">
-                <Badge variant="warning">Em Beta - Disponível em Breve</Badge>
+            <div className="space-y-2">
+                <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Cálculo de ROI Preditivo</h2>
+                <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
+                    Estamos calibrando nosso motor de IA para cruzar os preços de mercado atuais com as promoções vigentes.
+                </p>
+            </div>
+            <div className="pt-4 flex justify-center">
+                <Badge variant="info" className="px-4 py-1">EM DESENVOLVIMENTO</Badge>
             </div>
         </div>
     )
@@ -165,32 +178,36 @@ function SimuladorROI() {
 
 function AlertasSmart() {
     return (
-        <div className="card p-8 text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 mx-auto">
-                <Bell className="w-8 h-8" />
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-16 rounded-3xl text-center shadow-sm space-y-6">
+            <div className="w-20 h-20 rounded-3xl bg-blue-500/10 flex items-center justify-center text-blue-500 mx-auto">
+                <Bell size={32} />
             </div>
-            <h2 className="text-xl font-black text-gray-900 dark:text-white">Alertas de Preço Smart</h2>
-            <p className="text-gray-500 max-w-md mx-auto text-sm">
-                Seja notificado no WhatsApp ou E-mail assim que o milheiro bater o seu preço alvo de venda ou compra.
-            </p>
-            <div className="pt-4 flex justify-center gap-3">
-                <Button variant="primary">Criar Meu Primeiro Alerta</Button>
+            <div className="space-y-2">
+                <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Alertas de Preço Automáticos</h2>
+                <p className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
+                    Receba notificações instantâneas via Telegram ou WhatsApp quando o milheiro atingir seu valor alvo.
+                </p>
+            </div>
+            <div className="pt-4 flex justify-center">
+                <Button className="px-10 h-12 uppercase font-black text-xs tracking-widest">Configurar Meu Primeiro Alerta</Button>
             </div>
         </div>
     )
 }
 
-function PriceStat({ label, value, change, status }: { label: string, value: string, change: string, status: 'up' | 'down' }) {
+function PriceStat({ label, value, change, status, color }: { label: string, value: string, change: string, status: 'up' | 'down', color: string }) {
     return (
-        <div className="card p-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-6 rounded-3xl shadow-sm border-t-4" style={{ borderTopColor: color }}>
             <div className="flex justify-between items-start">
                 <div>
-                    <p className="field-label mb-0">{label}</p>
-                    <p className="text-xl font-black text-gray-900 dark:text-white mt-1 tabular">{value}</p>
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">{label}</p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white mt-1 tabular tracking-tight">{value}</p>
                 </div>
-                <div className={`flex items-center gap-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${status === 'up' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-                    }`}>
-                    {status === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                <div className={cn(
+                    "flex items-center gap-0.5 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-tighter",
+                    status === 'up' ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
+                )}>
+                    {status === 'up' ? <ArrowUpRight size={12} strokeWidth={3} /> : <ArrowDownRight size={12} strokeWidth={3} />}
                     {change}
                 </div>
             </div>

@@ -1,77 +1,180 @@
 'use client'
 
 import * as React from 'react'
+import { Database } from '@/src/types'
 import { alterarSenha } from '@/src/app/actions'
-import { Moon, Sun, Key, Settings } from 'lucide-react'
+import { Moon, Sun, Key, Settings, User } from 'lucide-react'
 import { Button } from '../ui/Button'
-import { useTheme } from '../providers/ThemeProvider'
+import { PROGS } from '@/src/constants'
+import { cn } from '@/src/lib/utils'
 
-const PROGS = ['Livelo', 'Esfera', 'Átomos', 'Smiles', 'Azul', 'LATAM', 'Inter', 'Itaú']
 
-interface ConfiguracoesProps { userEmail?: string }
+interface ConfiguracoesProps {
+    db: Database
+    toast: (msg: string, type?: any) => void
+    theme: 'light' | 'dark'
+    toggleTheme: () => void
+    userEmail?: string
+}
 
-export function Configuracoes({ userEmail }: ConfiguracoesProps) {
-    const { theme, toggleTheme } = useTheme()
-
+export default function Configuracoes({ db, toast, theme, toggleTheme, userEmail }: ConfiguracoesProps) {
     const [progsAtivos, setProgsAtivos] = React.useState<string[]>(() => {
         if (typeof window === 'undefined') return PROGS
         const s = localStorage.getItem('progsAtivos'); return s ? JSON.parse(s) : PROGS
     })
+
     const toggleProg = (p: string) => {
-        setProgsAtivos(prev => { const n = prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]; localStorage.setItem('progsAtivos', JSON.stringify(n)); return n })
+        setProgsAtivos(prev => {
+            const n = prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]
+            localStorage.setItem('progsAtivos', JSON.stringify(n))
+            return n
+        })
     }
 
     const [senha, setSenha] = React.useState('')
     const [senhaConf, setSenhaConf] = React.useState('')
     const [ldPwd, setLdPwd] = React.useState(false)
-    const [msgPwd, setMsgPwd] = React.useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
     const handleSenha = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (senha !== senhaConf) { setMsgPwd({ type: 'error', text: 'Senhas não coincidem.' }); return }
-        if (senha.length < 6) { setMsgPwd({ type: 'error', text: 'Mín. 6 caracteres.' }); return }
-        setLdPwd(true); setMsgPwd(null)
+        if (senha !== senhaConf) { toast('As senhas não coincidem.', 'error'); return }
+        if (senha.length < 6) { toast('A senha deve ter no mínimo 6 caracteres.', 'error'); return }
+
+        setLdPwd(true)
         try {
-            await alterarSenha(senha); setMsgPwd({ type: 'success', text: 'Senha alterada!' }); setSenha(''); setSenhaConf('')
-        } catch (err: unknown) { setMsgPwd({ type: 'error', text: err instanceof Error ? err.message : 'Erro.' }) } finally { setLdPwd(false) }
+            await alterarSenha(senha)
+            toast('Senha alterada com sucesso!', 'success')
+            setSenha(''); setSenhaConf('')
+        } catch (err: any) {
+            toast(err.message, 'error')
+        } finally {
+            setLdPwd(false)
+        }
     }
 
-    const iCls = 'flex h-11 w-full rounded-xl px-3.5 py-2.5 text-sm font-medium bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-borderDark text-gray-900 dark:text-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-150'
+    const iCls = "w-full rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
 
     return (
-        <div className="space-y-6">
-            <div><p className="field-label mb-1">Sistema</p><h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-2"><Settings className="text-accent w-7 h-7" /> Configurações</h1></div>
-
-            {userEmail && (<div className="card p-5"><h2 className="field-label mb-2">Conta</h2><p className="text-sm text-gray-500">Logado como: <span className="text-gray-900 dark:text-white font-bold">{userEmail}</span></p></div>)}
-
-            <div className="card p-5">
-                <h2 className="field-label mb-4">Aparência</h2>
-                <div className="flex items-center justify-between">
-                    <div><p className="text-sm text-gray-700 dark:text-gray-300 font-medium">Modo {theme === 'dark' ? 'Escuro' : 'Claro'}</p><p className="text-[11px] text-gray-500 mt-0.5">Salvo localmente.</p></div>
-                    <button onClick={toggleTheme} className={`relative inline-flex h-10 w-20 items-center rounded-full transition-colors ${theme === 'dark' ? 'bg-accent' : 'bg-gray-200'} px-1`}>
-                        <span className={`inline-flex h-8 w-8 transform rounded-full bg-white items-center justify-center shadow-md transition-transform ${theme === 'dark' ? 'translate-x-10' : 'translate-x-0'}`}>
-                            {theme === 'dark' ? <Moon className="w-4 h-4 text-primary" /> : <Sun className="w-4 h-4 text-warning" />}
-                        </span>
-                    </button>
+        <div className="space-y-8 pb-20">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                <div>
+                    <p className="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-1.5">Preferências</p>
+                    <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-2 leading-none">
+                        Configurações
+                    </h1>
                 </div>
             </div>
 
-            <div className="card p-5">
-                <h2 className="field-label mb-4">Programas Ativos</h2>
-                <p className="text-[11px] text-gray-500 mb-3">Quais programas aparecem nos formulários.</p>
-                <div className="flex flex-wrap gap-2">
-                    {PROGS.map(p => (<button key={p} onClick={() => toggleProg(p)} className={`px-4 py-2 text-xs font-bold rounded-full transition-all duration-150 active:scale-95 ${progsAtivos.includes(p) ? 'bg-accent text-primary shadow-[0_0_12px_rgba(212,175,55,0.2)]' : 'bg-transparent border border-gray-200 dark:border-borderDark text-gray-500 hover:text-gray-900 dark:hover:text-white'}`}>{p}</button>))}
-                </div>
-            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-8">
+                    {/* Perfil */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-8 rounded-3xl shadow-sm">
+                        <h2 className="text-xs font-black text-slate-900 dark:text-white mb-6 uppercase tracking-widest flex items-center gap-2">
+                            <User size={16} className="text-amber-500" /> Conta
+                        </h2>
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                                <User size={24} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">E-mail de Acesso</p>
+                                <p className="text-base font-black text-slate-900 dark:text-white">{userEmail || 'Não identificado'}</p>
+                            </div>
+                        </div>
+                    </div>
 
-            <div className="card p-5">
-                <h2 className="field-label mb-4 flex items-center gap-2"><Key className="w-3.5 h-3.5 text-accent" /> Alterar Senha</h2>
-                <form onSubmit={handleSenha}><div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div><label className="field-label">Nova Senha</label><input type="password" value={senha} onChange={e => setSenha(e.target.value)} className={iCls} placeholder="Mín. 6 caracteres" /></div>
-                    <div><label className="field-label">Confirmar</label><input type="password" value={senhaConf} onChange={e => setSenhaConf(e.target.value)} className={iCls} placeholder="Repita" /></div>
+                    {/* Aparência */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-8 rounded-3xl shadow-sm">
+                        <h2 className="text-xs font-black text-slate-900 dark:text-white mb-6 uppercase tracking-widest flex items-center gap-2">
+                            {theme === 'dark' ? <Moon size={16} className="text-amber-500" /> : <Sun size={16} className="text-amber-500" />} Personalização
+                        </h2>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-black text-slate-900 dark:text-white">Modo Visão</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Atualmente {theme === 'dark' ? 'Escuro' : 'Claro'}</p>
+                            </div>
+                            <button
+                                onClick={toggleTheme}
+                                className={cn(
+                                    "relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-300",
+                                    theme === 'dark' ? "bg-amber-500 shadow-lg shadow-amber-500/20" : "bg-slate-200"
+                                )}
+                            >
+                                <span
+                                    className={cn(
+                                        "inline-block h-6 w-6 transform rounded-full bg-white transition-all duration-300 shadow-sm",
+                                        theme === 'dark' ? "translate-x-7" : "translate-x-1"
+                                    )}
+                                />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Programas */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-8 rounded-3xl shadow-sm">
+                        <h2 className="text-xs font-black text-slate-900 dark:text-white mb-6 uppercase tracking-widest leading-none">Programas Ativos</h2>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 leading-relaxed">Selecione quais programas deseja exibir nos formulários de operação.</p>
+                        <div className="flex flex-wrap gap-2">
+                            {PROGS.map(p => (
+                                <button
+                                    key={p}
+                                    onClick={() => toggleProg(p)}
+                                    className={cn(
+                                        "px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-200",
+                                        progsAtivos.includes(p)
+                                            ? "bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/10"
+                                            : "bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    {p}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
-                    {msgPwd && <p className={`mt-3 text-sm ${msgPwd.type === 'success' ? 'text-success' : 'text-danger'}`}>{msgPwd.text}</p>}
-                    <div className="mt-5"><Button variant="primary" size="lg" loading={ldPwd} disabled={!senha} type="submit">Salvar Senha</Button></div></form>
+
+                <div className="space-y-8">
+                    {/* Senha */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-8 rounded-3xl shadow-sm h-full">
+                        <h2 className="text-xs font-black text-slate-900 dark:text-white mb-8 uppercase tracking-widest flex items-center gap-2">
+                            <Key size={16} className="text-amber-500" /> Segurança
+                        </h2>
+                        <form onSubmit={handleSenha} className="space-y-6">
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Nova Senha</label>
+                                <input
+                                    type="password"
+                                    value={senha}
+                                    onChange={e => setSenha(e.target.value)}
+                                    className={iCls}
+                                    placeholder="Mínimo de 6 caracteres"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Confirmar Senha</label>
+                                <input
+                                    type="password"
+                                    value={senhaConf}
+                                    onChange={e => setSenhaConf(e.target.value)}
+                                    className={iCls}
+                                    placeholder="Repita a nova senha"
+                                />
+                            </div>
+
+                            <div className="pt-4">
+                                <Button
+                                    loading={ldPwd}
+                                    disabled={!senha || !senhaConf}
+                                    type="submit"
+                                    className="w-full h-12 uppercase font-black text-xs tracking-widest"
+                                >
+                                    Atualizar Senha
+                                </Button>
+                                <p className="text-[9px] text-center text-slate-400 font-bold mt-4 uppercase tracking-[0.1em]">Sua sessão será mantida após a troca.</p>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     )

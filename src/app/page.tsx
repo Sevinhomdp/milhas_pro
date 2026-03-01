@@ -1,5 +1,6 @@
 import { createClient } from '@/src/lib/supabase/server'
-import { Dashboard } from '@/src/components/features/Dashboard'
+import DashboardClient from '@/src/components/DashboardClient'
+import { Database } from '@/src/types'
 
 export default async function Page() {
   const supabase = await createClient()
@@ -9,26 +10,38 @@ export default async function Page() {
 
   // Fetch all necessary data for the dashboard
   const [
+    { data: profile },
+    { data: programs },
     { data: saldos },
     { data: operacoes },
     { data: faturas },
     { data: cartoes },
     { data: metas }
   ] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('programs').select('*'),
     supabase.from('programas_saldos').select('*').eq('user_id', user.id),
-    supabase.from('operacoes').select('*').eq('user_id', user.id).order('data', { ascending: false }),
+    supabase.from('operacoes').select('*').eq('user_id', user.id).order('date', { ascending: false }),
     supabase.from('faturas_parcelas').select('*').eq('user_id', user.id),
     supabase.from('cartoes').select('*').eq('user_id', user.id),
     supabase.from('metas').select('*').eq('user_id', user.id)
   ])
 
+  const initialDb: Database = {
+    profile: profile || null,
+    programs: programs || [],
+    saldos: saldos || [],
+    operacoes: operacoes || [],
+    faturas: faturas || [],
+    cartoes: cartoes || [],
+    metas: metas || []
+  }
+
+
   return (
-    <Dashboard
-      saldos={saldos || []}
-      operacoes={operacoes || []}
-      faturas={faturas || []}
-      cartoes={cartoes || []}
-      metas={metas || []}
+    <DashboardClient
+      initialDb={initialDb}
+      user={user}
     />
   )
 }

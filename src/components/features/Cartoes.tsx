@@ -1,15 +1,21 @@
 'use client'
 
 import * as React from 'react'
-import { Cartao } from '@/src/types'
+import { Cartao, Database } from '@/src/types'
 import { adicionarCartao, removerCartao } from '@/src/app/actions'
 import { Button } from '../ui/Button'
 import { CreditCard, Plus, Trash2, RefreshCw } from 'lucide-react'
+import { formatCurrency, cn } from '@/src/lib/utils'
 
-interface CartoesProps { cartoes: Cartao[] }
-const fmtCur = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-export function Cartoes({ cartoes }: CartoesProps) {
+interface CartoesProps {
+    db: Database
+    toast: (msg: string, type?: any) => void
+    theme?: 'light' | 'dark'
+}
+
+export default function Cartoes({ db, toast }: CartoesProps) {
+    const { cartoes } = db
     const [showForm, setShowForm] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     const [nome, setNome] = React.useState('')
@@ -21,8 +27,6 @@ export function Cartoes({ cartoes }: CartoesProps) {
     const [valorGasto, setValorGasto] = React.useState('5000')
     const [ptsPorDolar, setPtsPorDolar] = React.useState('2.5')
 
-    const fmtNum = (v: number) => Math.floor(v).toLocaleString('pt-BR')
-
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault(); setLoading(true)
         try {
@@ -32,20 +36,20 @@ export function Cartoes({ cartoes }: CartoesProps) {
                 parseInt(diaVenc) || 10,
                 parseFloat(limite) || 0
             )
+            toast('Cartão adicionado!', 'success')
             setNome(''); setLimite(''); setShowForm(false)
-        } catch (e) {
-            console.error(e)
-            alert(e instanceof Error ? e.message : 'Erro ao adicionar cartão')
+        } catch (e: any) {
+            toast(e.message, 'error')
         } finally { setLoading(false) }
     }
 
-    const handleDelete = async (id: string, nome: string) => {
-        if (!window.confirm(`Excluir ${nome}?`)) return
+    const handleDelete = async (id: string, nomeCur: string) => {
+        if (!window.confirm(`Excluir ${nomeCur}?`)) return
         try {
             await removerCartao(id)
-        } catch (e) {
-            console.error(e)
-            alert(e instanceof Error ? e.message : 'Erro ao remover cartão')
+            toast('Cartão removido', 'info')
+        } catch (e: any) {
+            toast(e.message, 'error')
         }
     }
 
@@ -62,15 +66,15 @@ export function Cartoes({ cartoes }: CartoesProps) {
         }
     }
 
-    const inputCls = 'flex h-11 w-full rounded-xl px-3.5 py-2.5 text-sm font-medium bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-borderDark text-gray-900 dark:text-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all duration-150 tabular'
+    const inputCls = "w-full rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                 <div>
-                    <p className="field-label mb-1">Gestão</p>
-                    <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
-                        <CreditCard className="text-accent w-7 h-7" /> Cartões
+                    <p className="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-1.5">Gestão Financeira</p>
+                    <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-2 leading-none">
+                        Cartões
                     </h1>
                 </div>
                 <Button
@@ -83,29 +87,29 @@ export function Cartoes({ cartoes }: CartoesProps) {
             </div>
 
             {showForm && (
-                <div className="card p-6 animate-fadeInUp">
-                    <h2 className="field-label mb-4">Adicionar Cartão</h2>
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-6 rounded-3xl shadow-sm animate-fadeIn">
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-widest">Adicionar Cartão</h2>
                     <form onSubmit={handleAdd}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div>
-                                <label className="field-label">Nome</label>
+                                <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Nome</label>
                                 <input value={nome} onChange={e => setNome(e.target.value)} className={inputCls} placeholder="C6 Black" required />
                             </div>
                             <div>
-                                <label className="field-label">Dia Fechamento</label>
+                                <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Dia Fechamento</label>
                                 <input type="number" value={diaFech} onChange={e => setDiaFech(e.target.value)} className={inputCls} min="1" max="31" required />
                             </div>
                             <div>
-                                <label className="field-label">Dia Vencimento</label>
+                                <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Dia Vencimento</label>
                                 <input type="number" value={diaVenc} onChange={e => setDiaVenc(e.target.value)} className={inputCls} min="1" max="31" required />
                             </div>
                             <div>
-                                <label className="field-label">Limite (R$)</label>
+                                <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Limite (R$)</label>
                                 <input type="number" value={limite} onChange={e => setLimite(e.target.value)} className={inputCls} step="0.01" placeholder="0.00" required />
                             </div>
                         </div>
-                        <div className="mt-5">
-                            <Button variant="primary" size="lg" loading={loading} type="submit">
+                        <div className="mt-6">
+                            <Button loading={loading} type="submit" size="lg" className="px-8">
                                 Salvar Cartão
                             </Button>
                         </div>
@@ -113,39 +117,55 @@ export function Cartoes({ cartoes }: CartoesProps) {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
-                {cartoes.map((c, i) => (
-                    <div key={c.id} className="card card-hover p-5 animate-fadeInUp" style={{ animationDelay: `${i * 60}ms` }}>
-                        <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-2.5">
-                                <div className="p-2 rounded-xl bg-accent/10"><CreditCard className="w-4 h-4 text-accent" /></div>
-                                <div>
-                                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">{c.nome}</h3>
-                                    <p className="text-[11px] text-gray-500">Limite: {fmtCur(Number(c.limite))}</p>
-                                </div>
-                            </div>
-                            <Button variant="danger" size="sm" onClick={() => handleDelete(c.id, c.nome)} icon={<Trash2 className="w-3 h-3" />} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {cartoes.map((c) => (
+                    <div key={c.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-6 rounded-3xl shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => handleDelete(c.id, c.nome)} className="p-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-xl transition-all">
+                                <Trash2 size={14} />
+                            </button>
                         </div>
-                        <div className="grid grid-cols-2 gap-3 mt-4 border-t border-gray-50 dark:border-white/5 pt-3">
-                            <div>
-                                <p className="field-label mb-0">Fechamento</p>
-                                <p className="text-sm font-black text-gray-900 dark:text-white tabular mt-0.5">Dia {c.dia_fechamento}</p>
+
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                <CreditCard size={24} />
                             </div>
                             <div>
-                                <p className="field-label mb-0">Vencimento</p>
-                                <p className="text-sm font-black text-gray-900 dark:text-white tabular mt-0.5">Dia {c.dia_vencimento}</p>
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{c.nome}</h3>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Limite: {formatCurrency(Number(c.limite))}</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mt-auto pt-6 border-t border-slate-100 dark:border-white/5">
+                            <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Fechamento</p>
+                                <p className="text-sm font-black text-slate-900 dark:text-white">Dia {c.dia_fechamento}</p>
+                            </div>
+                            <div>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Vencimento</p>
+                                <p className="text-sm font-black text-slate-900 dark:text-white">Dia {c.dia_vencimento}</p>
                             </div>
                         </div>
                     </div>
                 ))}
-                {cartoes.length === 0 && <p className="text-gray-500 text-sm col-span-3 text-center py-8">Nenhum cartão cadastrado.</p>}
+
+                {cartoes.length === 0 && (
+                    <div className="col-span-full py-12 text-center bg-gray-50/50 dark:bg-white/[0.02] rounded-3xl border border-dashed border-gray-200 dark:border-white/10">
+                        <p className="text-sm text-gray-500 font-bold uppercase tracking-widest">Nenhum cartão cadastrado.</p>
+                    </div>
+                )}
             </div>
 
-            <div className="card p-6">
-                <h2 className="field-label mb-4">🏦 Simulador de Acúmulo (Pontos/Dólar)</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* Simulador */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-8 rounded-3xl shadow-sm">
+                <div className="flex items-center gap-3 mb-6">
+                    <RefreshCw className="w-5 h-5 text-amber-500" />
+                    <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest leading-none">Simulador de Acúmulo</h2>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div>
-                        <label className="field-label">Valor Gasto (R$)</label>
+                        <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Gasto Mensal (R$)</label>
                         <input
                             type="number"
                             className={inputCls}
@@ -155,7 +175,7 @@ export function Cartoes({ cartoes }: CartoesProps) {
                         />
                     </div>
                     <div>
-                        <label className="field-label">Pontos por Dólar</label>
+                        <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Pontos por Dólar</label>
                         <input
                             type="number"
                             className={inputCls}
@@ -165,7 +185,7 @@ export function Cartoes({ cartoes }: CartoesProps) {
                         />
                     </div>
                     <div>
-                        <label className="field-label">Cotação do Dólar (R$)</label>
+                        <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Cotação Dólar</label>
                         <div className="flex gap-2">
                             <input
                                 type="number"
@@ -173,17 +193,20 @@ export function Cartoes({ cartoes }: CartoesProps) {
                                 value={dolar || ''}
                                 onChange={e => setDolar(parseFloat(e.target.value))}
                             />
-                            <Button variant="secondary" size="md" onClick={fetchDolar} loading={loadDolar} icon={<RefreshCw className="w-4 h-4" />} />
+                            <button onClick={fetchDolar} disabled={loadDolar} className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-amber-500 rounded-xl transition-all disabled:opacity-50">
+                                <RefreshCw size={18} className={cn(loadDolar && 'animate-spin')} />
+                            </button>
                         </div>
                     </div>
                     <div className="flex flex-col justify-end">
-                        <label className="field-label">Total a Acumular</label>
-                        <div className="h-11 flex items-center px-4 rounded-xl bg-accent/5 border border-accent/20">
-                            <span className="text-accent font-black">{valorGasto && dolar && ptsPorDolar ? fmtNum((parseFloat(valorGasto) / dolar) * parseFloat(ptsPorDolar)) : '0'} pts</span>
+                        <div className="h-[46px] flex flex-col justify-center px-6 rounded-2xl bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/20">
+                            <p className="text-[9px] font-black uppercase tracking-widest opacity-80">Total Estimado</p>
+                            <span className="text-lg font-black tabular leading-none">
+                                {valorGasto && dolar && ptsPorDolar ? Math.floor((parseFloat(valorGasto) / dolar) * parseFloat(ptsPorDolar)).toLocaleString('pt-BR') : '0'} pts
+                            </span>
                         </div>
                     </div>
                 </div>
-                <p className="text-[10px] text-gray-500">Dica: A cotação utilizada geralmente é o dólar PTAX + spread do cartão.</p>
             </div>
         </div>
     )
