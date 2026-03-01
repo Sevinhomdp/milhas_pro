@@ -1,8 +1,16 @@
 diff --git a/src/app/layout.tsx b/src/app/layout.tsx
-index d72a46d35d2c976634d7ee8e0274d18d1ebbd5f9..14f97a4d477a9faa0ab4fe239a63ae20adbd3585 100644
+index d72a46d35d2c976634d7ee8e0274d18d1ebbd5f9..90116861f66dd7d556580a0a30d2159d66b5b1af 100644
 --- a/src/app/layout.tsx
 +++ b/src/app/layout.tsx
-@@ -9,53 +9,55 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
+@@ -1,61 +1,58 @@
+ import type { Metadata } from 'next'
+-import { Inter } from 'next/font/google'
+ import './globals.css'
+ import { AppShell } from '@/src/components/layout/AppShell'
+ import { createClient } from '@/src/lib/supabase/server'
+ 
+-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
+-
  export const metadata: Metadata = {
    title: 'Milhas Pro | Gestão de Elite',
    description: 'Plataforma de gestão financeira para operadores de milhas aéreas.',
@@ -28,11 +36,8 @@ index d72a46d35d2c976634d7ee8e0274d18d1ebbd5f9..14f97a4d477a9faa0ab4fe239a63ae20
                (function() {
                  try {
                    var t = localStorage.getItem('milhas-pro-theme');
--                  var isDark = t ? t === 'dark' : true;
--                  if (isDark) {
-+                  var storedTheme = (t === 'dark' || t === 'light') ? t : null;
-+                  var theme = storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-+                  if (theme === 'dark') {
+                   var isDark = t ? t === 'dark' : true;
+                   if (isDark) {
                      document.documentElement.classList.add('dark');
                      document.documentElement.style.colorScheme = 'dark';
                    } else {
@@ -40,16 +45,15 @@ index d72a46d35d2c976634d7ee8e0274d18d1ebbd5f9..14f97a4d477a9faa0ab4fe239a63ae20
                      document.documentElement.style.colorScheme = 'light';
                    }
                  } catch (e) {
--                  document.documentElement.classList.add('dark');
-+                  document.documentElement.classList.remove('dark');
-+                  document.documentElement.style.colorScheme = 'light';
+                   document.documentElement.classList.add('dark');
                  }
                })();
              `,
            }}
          />
        </head>
-       <body className={`${inter.className} min-h-screen`}>
+-      <body className={`${inter.className} min-h-screen`}>
++      <body className="min-h-screen">
          <ThemeProvider>
            {session ? (
              <AppShell>{children}</AppShell>
