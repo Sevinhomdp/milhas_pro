@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AppShell } from '@/src/components/layout/AppShell'
 import { createClient } from '@/src/lib/supabase/server'
+import { Profile } from '@/src/types'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
@@ -16,6 +17,19 @@ import { ThemeProvider } from '@/src/components/providers/ThemeProvider'
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
+
+  let profile: Profile | null = null
+  if (session?.user) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url, plan, created_at')
+      .eq('id', session.user.id)
+      .maybeSingle()
+
+    if (!error && data) {
+      profile = data as Profile
+    }
+  }
 
   return (
     <html lang="pt-BR" suppressHydrationWarning>
@@ -50,7 +64,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className={`${inter.className} min-h-screen`}>
         <ThemeProvider>
           {session ? (
-            <AppShell>{children}</AppShell>
+            <AppShell profile={profile}>{children}</AppShell>
           ) : (
             children
           )}
