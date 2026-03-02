@@ -1,41 +1,102 @@
-import { createClient } from '@/src/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { SaldosRoute } from '@/src/components/routes/SaldosRoute'
-
-export default async function SaldosPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const [
-    { data: programs },
-    { data: balances }
-  ] = await Promise.all([
-    supabase.from('programs').select('*').or(`user_id.is.null,user_id.eq.${user.id}`).order('name'),
-    supabase.from('balances').select('*, programs(*)').eq('user_id', user.id)
-  ])
-
-  const formattedSaldos = (balances || []).map((s: any) => ({
-    program_id: s.program_id,
-    nome_programa: s.programs?.name || '?',
-    saldo_atual: Number(s.calculated_balance) || 0,
-    ajuste_manual: s.manual_adjustment,
-    usar_ajuste_manual: (s.manual_adjustment !== null && s.manual_adjustment !== 0),
-    custo_medio: Number(s.custo_medio) || 0,
-  }))
-
-  const db = {
-    programs: programs || [],
-    saldos: formattedSaldos,
-    profile: null,
-    operacoes: [],
-    faturas: [],
-    cartoes: [],
-    metas: [],
-    market_prices: [],
-    market_news: [],
-    user_alerts: []
-  }
-
-  return <SaldosRoute db={db as any} />
-}
+diff --git a/src/app/saldos/page.tsx b/src/app/saldos/page.tsx
+index 146cdbea284ba17c3b6dc2695247345dc9e4bbaf..d184c5cbb9e8c5bd9a347ba41115112013762569 100644
+--- a/src/app/saldos/page.tsx
++++ b/src/app/saldos/page.tsx
+@@ -1,48 +1,49 @@
+-diff --git a/src/app/saldos/page.tsx b/src/app/saldos/page.tsx
+-index d0281d55757b60588e18141198b84006cd42f8e5..65b308661ce64e1594de7b99c0706e59a0b2dba5 100644
+---- a/src/app/saldos/page.tsx
+-+++ b/src/app/saldos/page.tsx
+-@@ -1,41 +1,41 @@
+- import { createClient } from '@/src/lib/supabase/server'
+- import { redirect } from 'next/navigation'
+--import Saldos from '@/src/components/features/Saldos'
+-+import { SaldosRoute } from '@/src/components/routes/SaldosRoute'
+- 
+- export default async function SaldosPage() {
+-   const supabase = await createClient()
+-   const { data: { user } } = await supabase.auth.getUser()
+-   if (!user) redirect('/login')
+- 
+-   const [
+-     { data: programs },
+-     { data: balances }
+-   ] = await Promise.all([
+-     supabase.from('programs').select('*').or(`user_id.is.null,user_id.eq.${user.id}`).order('name'),
+-     supabase.from('balances').select('*, programs(*)').eq('user_id', user.id)
+-   ])
+- 
+-   const formattedSaldos = (balances || []).map((s: any) => ({
+-     program_id: s.program_id,
+-     nome_programa: s.programs?.name || '?',
+-     saldo_atual: Number(s.calculated_balance) || 0,
+-     ajuste_manual: s.manual_adjustment,
+-     usar_ajuste_manual: (s.manual_adjustment !== null && s.manual_adjustment !== 0),
+-     custo_medio: Number(s.custo_medio) || 0,
+-   }))
+- 
+-   const db = {
+-     programs: programs || [],
+-     saldos: formattedSaldos,
+-     profile: null,
+-     operacoes: [],
+-     faturas: [],
+-     cartoes: [],
+-     metas: [],
+-     market_prices: [],
+-     market_news: [],
+-     user_alerts: []
+-   }
+- 
+--  return <Saldos db={db as any} toast={() => { }} theme="dark" />
+-+  return <SaldosRoute db={db as any} />
+- }
++import { createClient } from '@/src/lib/supabase/server'
++import { redirect } from 'next/navigation'
++import { SaldosRoute } from '@/src/components/routes/SaldosRoute'
++
++export default async function SaldosPage() {
++  const supabase = await createClient()
++  const { data: { user } } = await supabase.auth.getUser()
++  if (!user) redirect('/login')
++
++  const [
++    { data: programs },
++    { data: balances }
++  ] = await Promise.all([
++    supabase.from('programs').select('*').or(`user_id.is.null,user_id.eq.${user.id}`).order('name'),
++    supabase.from('balances').select('*, programs(*)').eq('user_id', user.id)
++  ])
++
++  const formattedSaldos = (balances || []).map((s: any) => ({
++    program_id: s.program_id,
++    nome_programa: s.programs?.name || '?',
++    saldo_atual: Number(s.calculated_balance) || 0,
++    ajuste_manual: s.manual_adjustment,
++    usar_ajuste_manual: (s.manual_adjustment !== null && s.manual_adjustment !== 0),
++    custo_medio: Number(s.custo_medio) || 0,
++  }))
++
++  const plainPrograms = (programs || []).map((p: any) => ({
++    id: String(p.id),
++    name: String(p.name),
++    currency_name: p.currency_name ?? null,
++    user_id: p.user_id ?? null,
++    created_at: String(p.created_at),
++  }))
++
++  const db = {
++    programs: plainPrograms,
++    saldos: formattedSaldos,
++    profile: null,
++    operacoes: [],
++    faturas: [],
++    cartoes: [],
++    metas: [],
++    market_prices: [],
++    market_news: [],
++    user_alerts: []
++  }
++
++  return <SaldosRoute db={db as any} />
++}
