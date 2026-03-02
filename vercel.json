@@ -3,23 +3,11 @@
     {
       "path": "/api/fetch-market-prices",
       "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/update-prices",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/update-news",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/send-alerts",
-      "schedule": "0 */6 * * *"
     }
   ],
   "rewrites": [
     {
-      "source": "/api/((?!cron/).*)",
+      "source": "/api/:path*",
       "destination": "https://xoegapeodtbncirqvlmi.supabase.co/functions/v1/:path*"
     }
   ]
