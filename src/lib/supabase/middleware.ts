@@ -1,8 +1,8 @@
 diff --git a/src/lib/supabase/middleware.ts b/src/lib/supabase/middleware.ts
-index e923462974c03f9acade2c6afaa73be12c26aa89..31f3fc54050de062a18de47cb5bc26eaad65011f 100644
+index e923462974c03f9acade2c6afaa73be12c26aa89..1e0d2aea0740f97d23fbe9aa8dd1fae9441ed238 100644
 --- a/src/lib/supabase/middleware.ts
 +++ b/src/lib/supabase/middleware.ts
-@@ -18,47 +18,49 @@ export async function updateSession(request: NextRequest) {
+@@ -18,47 +18,50 @@ export async function updateSession(request: NextRequest) {
    if (!supabaseUrl || !supabaseKey) {
      return supabaseResponse
    }
@@ -28,6 +28,7 @@ index e923462974c03f9acade2c6afaa73be12c26aa89..31f3fc54050de062a18de47cb5bc26ea
      }
    )
  
++  // Garante refresh dos cookies de auth em toda request SSR.
 +  await supabase.auth.getSession()
 +
    const {
