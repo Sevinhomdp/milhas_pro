@@ -46,6 +46,8 @@ export interface Cartao {
   dia_fechamento: number;
   dia_vencimento: number;
   limite: number;
+  total_em_aberto?: number;
+  limite_disponivel?: number;
   created_at: string;
 }
 
@@ -150,6 +152,5 @@ export interface Database {
   market_news: MarketNews[];
   user_alerts: UserAlert[];
 }
-
 
 
