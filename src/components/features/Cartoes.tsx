@@ -152,7 +152,7 @@ export default function Cartoes({ db, toast }: CartoesProps) {
                         <div className="mb-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3">
                             <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] mb-1">Limite disponível</p>
                             <p className="text-base font-black text-emerald-700 dark:text-emerald-300">
-                                {formatCurrency(Math.max(0, Number(c.limite) - (limiteDisponivelPorCartao.get(c.id) || 0)))}
+                                {formatCurrency(Math.max(0, Number((c as any).limite_disponivel ?? (Number(c.limite) - (limiteDisponivelPorCartao.get(c.id) || 0)))))}
                             </p>
                         </div>
 
