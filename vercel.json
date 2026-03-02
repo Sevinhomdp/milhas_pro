@@ -19,10 +19,22 @@
   ],
   "rewrites": [
     {
-      "source": "/api/((?!cron/).*)",
-      "destination": "https://xoegapeodtbncirqvlmi.supabase.co/functions/v1/:path*"
       "source": "/api/:path((?!cron/).*)",
       "destination": "https://xoegapeodtbncirqvlmi.supabase.co/functions/v1/:path"
+      "source": "/api/cron/update-prices",
+      "destination": "/api/cron/update-prices"
+    },
+    {
+      "source": "/api/cron/update-news",
+      "destination": "/api/cron/update-news"
+    },
+    {
+      "source": "/api/cron/send-alerts",
+      "destination": "/api/cron/send-alerts"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://xoegapeodtbncirqvlmi.supabase.co/functions/v1/:path*"
     }
   ]
 }
