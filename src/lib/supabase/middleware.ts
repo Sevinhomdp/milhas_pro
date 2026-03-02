@@ -40,6 +40,11 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
+  // Garante a hidratação/renovação da sessão em requests SSR.
+  // Sem essa chamada, páginas de Server Component podem receber
+  // contexto de autenticação desatualizado após o login.
+  await supabase.auth.getSession()
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
