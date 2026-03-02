@@ -46,6 +46,8 @@ export interface Cartao {
   dia_fechamento: number;
   dia_vencimento: number;
   limite: number;
+  total_em_aberto?: number;
+  limite_disponivel?: number;
   created_at: string;
 }
 

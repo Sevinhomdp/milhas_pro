@@ -98,14 +98,18 @@ export default function Saldos({ db, toast }: SaldosProps) {
     const [savingProg, setSavingProg] = useState<string | null>(null)
 
     const programasCadastrados = db.saldos.map(s => s.nome_programa)
-    const programasDisponiveis = PROGS.filter(p => !programasCadastrados.includes(p))
+    const catalogoProgramas = Array.from(new Set([
+        ...db.programs.map((p) => p.name),
+        ...PROGS,
+    ])).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+    const programasDisponiveis = catalogoProgramas.filter(p => !programasCadastrados.includes(p))
 
-    const handleAddPrograma = async () => {
-        if (!selectedProg) return
+    const handleAddPrograma = async (programa: string) => {
+        if (!programa) return
         setAddLoading(true)
         try {
-            await adicionarProgramaAoSaldo(selectedProg)
-            toast(`Programa ${selectedProg} adicionado!`, 'success')
+            await adicionarProgramaAoSaldo(programa)
+            toast(`Programa ${programa} adicionado!`, 'success')
             setSelectedProg('')
         } catch (e: any) {
             toast(e.message, 'error')
@@ -160,33 +164,19 @@ export default function Saldos({ db, toast }: SaldosProps) {
                             <ProgramaCombobox
                                 options={programasDisponiveis}
                                 value={selectedProg}
-                                onChange={setSelectedProg}
+                                onChange={(programa) => {
+                                    setSelectedProg(programa)
+                                    void handleAddPrograma(programa)
+                                }}
                                 onClose={() => setShowCombobox(false)}
                             />
                         )}
                     </div>
                 )}
             </div>
-
-            {/* Confirmação após seleção no combobox */}
-            {selectedProg && !showCombobox && (
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl px-4 py-3 flex items-center justify-between gap-4 animate-fadeIn">
-                    <p className="text-sm font-bold text-amber-700 dark:text-amber-300">
-                        Adicionar <span className="text-amber-500">{selectedProg}</span> ao portfólio?
-                    </p>
-                    <div className="flex items-center gap-2 shrink-0">
-                        <button
-                            onClick={handleAddPrograma}
-                            disabled={addLoading}
-                            className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 font-black text-xs rounded-xl transition-all disabled:opacity-50"
-                        >
-                            <Check size={12} />
-                            {addLoading ? 'Adicionando...' : 'Confirmar'}
-                        </button>
-                        <button onClick={() => setSelectedProg('')} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                            <X size={15} />
-                        </button>
-                    </div>
+            {addLoading && (
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl px-4 py-3 animate-fadeIn">
+                    <p className="text-sm font-bold text-amber-700 dark:text-amber-300">Adicionando programa...</p>
                 </div>
             )}
 

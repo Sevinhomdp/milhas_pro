@@ -40,6 +40,9 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
+  // Garante refresh dos cookies de auth em toda request SSR.
+  await supabase.auth.getSession()
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
