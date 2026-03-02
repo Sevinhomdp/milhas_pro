@@ -21,24 +21,9 @@ type Score = { label: string; color: 'green' | 'yellow' | 'red' } | null
 export default function Operacoes({ db, toast }: OperacoesProps) {
     const { operacoes, cartoes, programs } = db
 
-    // M-08 FIX: Respeitar a seleção de "Programas Ativos" feita em Configurações.
-    // Lê a lista do localStorage (mesma chave usada por Configuracoes.tsx).
-    // Se não houver preferência salva, exibe todos os programas.
-    const [programasFiltrados, setProgramasFiltrados] = React.useState<typeof programs>(programs)
-    React.useEffect(() => {
-        try {
-            const saved = localStorage.getItem('progsAtivos')
-            if (saved) {
-                const ativos: string[] = JSON.parse(saved)
-                const filtrados = programs.filter(p => ativos.includes(p.name))
-                setProgramasFiltrados(filtrados.length > 0 ? filtrados : programs)
-            } else {
-                setProgramasFiltrados(programs)
-            }
-        } catch {
-            setProgramasFiltrados(programs)
-        }
-    }, [programs])
+    // Mantém todos os programas disponíveis no cadastro,
+    // mesmo que o saldo atual do programa seja zero.
+    const programasDisponiveis = React.useMemo(() => programs, [programs])
 
     const [tipo, setTipo] = React.useState<TipoOp>('compra')
     const [loading, setLoading] = React.useState(false)
@@ -56,9 +41,9 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
     const today = new Date().toISOString().split('T')[0]
 
     const [fd, setFdState] = React.useState<Record<string, string>>({
-        program_id: programasFiltrados[0]?.id || '',
-        program_id_origem: programasFiltrados[0]?.id || '',
-        program_id_destino: programasFiltrados[1]?.id || '',
+        program_id: programasDisponiveis[0]?.id || '',
+        program_id_origem: programasDisponiveis[0]?.id || '',
+        program_id_destino: programasDisponiveis[1]?.id || programasDisponiveis[0]?.id || '',
         cartao_id: '',
         parcelas: '1',
         date: today,
@@ -69,6 +54,17 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
 
     const gf = (k: string) => fd[k] ?? ''
     const sf = (k: string, v: string) => setFdState(p => ({ ...p, [k]: v }))
+
+    React.useEffect(() => {
+        if (programasDisponiveis.length === 0) return
+
+        setFdState(prev => ({
+            ...prev,
+            program_id: prev.program_id || programasDisponiveis[0].id,
+            program_id_origem: prev.program_id_origem || programasDisponiveis[0].id,
+            program_id_destino: prev.program_id_destino || programasDisponiveis[Math.min(1, programasDisponiveis.length - 1)].id,
+        }))
+    }, [programasDisponiveis])
 
     React.useEffect(() => {
         const q = parseFloat(qtd) || 0, v = parseFloat(valor) || 0, t = parseFloat(taxas) || 0
@@ -195,13 +191,18 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             {error && <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-xs font-bold">{error}</div>}
+                            {programasDisponiveis.length === 0 && (
+                                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-600 dark:text-amber-400 text-xs font-bold">
+                                    Nenhum programa disponível. Cadastre um programa na aba Saldos para lançar operações.
+                                </div>
+                            )}
 
                             <div className="space-y-4">
                                 {tipo !== 'transferencia' ? (
                                     <div>
                                         <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Programa</label>
                                         <select value={gf('program_id')} onChange={e => sf('program_id', e.target.value)} className={inputCls} required>
-                                            {programasFiltrados.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                            {programasDisponiveis.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                         </select>
                                     </div>
                                 ) : (
@@ -209,13 +210,13 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
                                         <div>
                                             <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Origem</label>
                                             <select value={gf('program_id_origem')} onChange={e => sf('program_id_origem', e.target.value)} className={inputCls} required>
-                                                {programasFiltrados.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                {programasDisponiveis.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Destino</label>
                                             <select value={gf('program_id_destino')} onChange={e => sf('program_id_destino', e.target.value)} className={inputCls} required>
-                                                {programasFiltrados.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                {programasDisponiveis.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                             </select>
                                         </div>
                                     </div>
@@ -281,7 +282,7 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
                                 </div>
                             )}
 
-                            <Button type="submit" loading={loading} className="w-full h-12" icon={<PlusCircle className="w-5 h-5" />}>Registrar Operação</Button>
+                            <Button type="submit" loading={loading} disabled={programasDisponiveis.length === 0} className="w-full h-12" icon={<PlusCircle className="w-5 h-5" />}>Registrar Operação</Button>
                         </form>
                     </div>
                 </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Database, ProgramaSaldo } from '@/src/types'
 import { PROGS } from '@/src/constants'
 import { formatNumber, formatCurrency, cn } from '@/src/lib/utils'
@@ -91,6 +92,7 @@ function ProgramaCombobox({
 
 // ── Componente principal ─────────────────────────────────────
 export default function Saldos({ db, toast }: SaldosProps) {
+    const router = useRouter()
     const [showCombobox, setShowCombobox] = useState(false)
     const [selectedProg, setSelectedProg] = useState('')
     const [addLoading, setAddLoading] = useState(false)
@@ -107,6 +109,8 @@ export default function Saldos({ db, toast }: SaldosProps) {
             await registrarPrograma(selectedProg)
             toast(`Programa ${selectedProg} adicionado!`, 'success')
             setSelectedProg('')
+            setShowCombobox(false)
+            router.refresh()
         } catch (e: any) {
             toast(e.message, 'error')
         } finally {

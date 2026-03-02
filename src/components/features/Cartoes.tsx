@@ -15,7 +15,7 @@ interface CartoesProps {
 }
 
 export default function Cartoes({ db, toast }: CartoesProps) {
-    const { cartoes } = db
+    const { cartoes, faturas } = db
     const [showForm, setShowForm] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     const [nome, setNome] = React.useState('')
@@ -65,6 +65,25 @@ export default function Cartoes({ db, toast }: CartoesProps) {
             setLoadDolar(false)
         }
     }
+
+
+    const limitePorCartao = React.useMemo(() => {
+        const totalAtivo = faturas
+            .filter(f => !f.pago)
+            .reduce<Record<string, number>>((acc, f) => {
+                acc[f.cartao_id] = (acc[f.cartao_id] || 0) + Number(f.valor || 0)
+                return acc
+            }, {})
+
+        return cartoes.reduce<Record<string, { limiteTotal: number; despesasAtivas: number; limiteDisponivel: number; utilizacaoPct: number }>>((acc, c) => {
+            const limiteTotal = Number(c.limite) || 0
+            const despesasAtivas = totalAtivo[c.id] || 0
+            const limiteDisponivel = Math.max(0, limiteTotal - despesasAtivas)
+            const utilizacaoPct = limiteTotal > 0 ? Math.min(100, (despesasAtivas / limiteTotal) * 100) : 0
+            acc[c.id] = { limiteTotal, despesasAtivas, limiteDisponivel, utilizacaoPct }
+            return acc
+        }, {})
+    }, [cartoes, faturas])
 
     const inputCls = "w-full rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
 
@@ -132,7 +151,26 @@ export default function Cartoes({ db, toast }: CartoesProps) {
                             </div>
                             <div>
                                 <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{c.nome}</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Limite: {formatCurrency(Number(c.limite))}</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                    Limite total: {formatCurrency(limitePorCartao[c.id]?.limiteTotal || 0)}
+                                </p>
+                            </div>
+                        </div>
+
+
+                        <div className="mb-4 rounded-2xl bg-slate-50 dark:bg-white/5 p-3 border border-slate-200 dark:border-white/10">
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Limite disponível</p>
+                            <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                                {formatCurrency(limitePorCartao[c.id]?.limiteDisponivel || 0)}
+                            </p>
+                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1">
+                                Em uso: {formatCurrency(limitePorCartao[c.id]?.despesasAtivas || 0)} ({(limitePorCartao[c.id]?.utilizacaoPct || 0).toFixed(1)}%)
+                            </p>
+                            <div className="mt-2 h-2 w-full rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                                <div
+                                    className="h-full bg-amber-500 transition-all"
+                                    style={{ width: `${(limitePorCartao[c.id]?.utilizacaoPct || 0).toFixed(1)}%` }}
+                                />
                             </div>
                         </div>
 
