@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Milhas Pro</title>
+  <style>
+    :root {
+      --primary: #1e3a5f;
+      --accent: #d4af37;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #eab308;
+      --gray: #6b7280;
+      --border: #374151;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    nav { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    nav button { padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--primary); color: #e2e8f0; cursor: pointer; }
+    nav button:hover { background: #2d4a6f; }
+    nav button.active { background: var(--accent); color: #0f172a; border-color: var(--accent); }
+    .card { background: #1e293b; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
+    .card h2 { margin-bottom: 12px; font-size: 1.1rem; color: var(--accent); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--gray); font-weight: 500; }
+    input, select, button { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: #0f172a; color: #e2e8f0; }
+    button { cursor: pointer; }
+    button.primary { background: var(--accent); color: #0f172a; border: none; }
+    button.primary:hover { filter: brightness(1.1); }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    .stat { background: #0f172a; padding: 12px; border-radius: 8px; text-align: center; }
+    .stat span { font-size: 0.85rem; color: var(--gray); }
+    .stat strong { display: block; font-size: 1.2rem; margin-top: 4px; }
+    #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+    .toast { padding: 12px 18px; border-radius: 8px; animation: slideUp 0.3s ease; color: white; display: flex; align-items: center; gap: 8px; }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+    .toast.warning { background: var(--warning); color: #0f172a; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .sync-ok { color: var(--success); }
+    .sync-loading { color: var(--accent); }
+    .sync-error { color: var(--danger); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 998; display: flex; align-items: center; justify-content: center; }
+    .modal-overlay.hidden { display: none; }
+    .modal-card { background: #1e293b; padding: 24px; border-radius: 12px; max-width: 400px; width: 90%; border: 1px solid var(--border); }
+    .modal-card h3 { margin-bottom: 12px; color: var(--accent); }
+    .modal-card .summary { margin: 16px 0; padding: 12px; background: #0f172a; border-radius: 8px; font-size: 0.9rem; }
+    .modal-card .btns { display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px; }
+    .banner-offline { background: var(--warning); color: #0f172a; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .banner-offline.hidden { display: none; }
+    .cmp-label { font-size: 0.75rem; color: var(--gray); margin-top: 4px; }
+    .toggle-group { display: flex; gap: 0; margin-bottom: 12px; }
+    .toggle-group button { border-radius: 0; }
+    .toggle-group button:first-child { border-radius: 8px 0 0 8px; }
+    .toggle-group button:last-child { border-radius: 0 8px 8px 0; }
+    .toggle-group button.active { background: var(--accent); color: #0f172a; border-color: var(--accent); }
+    .row-venda { background: rgba(22,163,74,0.06); }
+    .row-compra { background: rgba(220,38,38,0.06); }
+    .btn-excluir { background: transparent; border: none; color: var(--danger); cursor: pointer; padding: 4px 8px; font-size: 1rem; }
+    .btn-excluir:hover { background: rgba(220,38,38,0.2); border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div id="banner-offline" class="banner-offline hidden">
+    <span>⚠ Modo offline — dados podem estar desatualizados</span>
+    <button onclick="carregarDados()">Tentar novamente</button>
+  </div>
+  <div class="container">
+    <nav>
+      <button onclick="navegar('dashboard', this)" class="active">Dashboard</button>
+      <button onclick="navegar('saldos', this)">Carteira</button>
+      <button onclick="navegar('operacoes', this)">Operações</button>
+      <button onclick="navegar('historico', this)">Histórico</button>
+      <button onclick="navegar('simulador', this)">Simulador</button>
+      <button onclick="navegar('calculadora', this)">Calculadora C6</button>
+      <button onclick="navegar('cartoes', this)">Cartões</button>
+      <button onclick="exportCSV()">Exportar CSV</button>
+      <button onclick="exportDRE()">Exportar DRE</button>
+    </nav>
+    <div id="sync-status" style="font-size:0.8rem;color:var(--gray);margin-bottom:8px;"></div>
+
+    <div id="view-dashboard" class="view">
+      <div class="card">
+        <h2>Resumo</h2>
+        <div class="grid-2">
+          <div class="stat"><span>Total Milhas</span><strong id="d-total">0</strong></div>
+          <div class="stat"><span>Lucro Estimado</span><strong id="d-lucro">R$ 0,00</strong></div>
+          <div class="stat"><span>Operações (30d)</span><strong id="d-ops30">0</strong></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Vencimentos Próximos</h2>
+        <table>
+          <thead><tr><th>Cartão</th><th>Valor</th><th>Vencimento</th><th>Dias</th></tr></thead>
+          <tbody id="faturas-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="view-saldos" class="view" style="display:none">
+      <div class="card">
+        <h2>Carteira</h2>
+        <div class="grid-2" id="saldos-grid"></div>
+      </div>
+    </div>
+
+    <div id="view-operacoes" class="view" style="display:none">
+      <div class="card">
+        <h2>Nova Operação</h2>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+          <button onclick="mostrarForm('compra')">Compra</button>
+          <button onclick="mostrarForm('venda')">Venda</button>
+          <button onclick="mostrarForm('transf')">Transferência</button>
+        </div>
+        <div id="form-compra" class="form-block" style="display:none">
+          <form id="form-compra-el" onsubmit="executarAcao('compra', event)">
+            <input type="date" id="c-data" required>
+            <select id="c-prog" required></select>
+            <input type="number" id="c-qtd" placeholder="Qtd milhas" min="1" required>
+            <input type="number" id="c-valor" placeholder="Valor R$" min="0" step="0.01" required>
+            <input type="number" id="c-parc" placeholder="Parcelas" min="1" value="1">
+            <button type="submit" class="primary">Lançar Compra</button>
+          </form>
+        </div>
+        <div id="form-venda" class="form-block" style="display:none">
+          <form id="form-venda-el" onsubmit="executarAcao('venda', event)">
+            <input type="date" id="v-data" required>
+            <select id="v-prog" required></select>
+            <input type="number" id="v-qtd" placeholder="Qtd milhas" min="1" required>
+            <input type="number" id="v-valor" placeholder="Valor R$" min="0" step="0.01" required>
+            <button type="submit" class="primary">Lançar Venda</button>
+          </form>
+        </div>
+        <div id="form-transf" class="form-block" style="display:none">
+          <form id="form-transf-el" onsubmit="executarAcao('transf', event)">
+            <input type="date" id="tr-data" required>
+            <select id="tr-origem" required></select>
+            <select id="tr-destino" required></select>
+            <input type="number" id="tr-qtd" placeholder="Qtd milhas" min="1" required>
+            <input type="number" id="tr-bonus" placeholder="Bônus de Transferência (100 = dobra as milhas)" value="0" min="0" step="0.01">
+            <button type="submit" class="primary">Lançar Transferência</button>
+          </form>
+          <div id="transf-preview" style="margin-top:12px;font-size:0.9rem;color:var(--gray);"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-historico" class="view" style="display:none">
+      <div class="card">
+        <h2>Histórico de Operações</h2>
+        <table>
+          <thead><tr><th>Data</th><th>Tipo</th><th>Programa</th><th>Qtd</th><th>Valor (R$)</th><th></th></tr></thead>
+          <tbody id="historico-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="view-simulador" class="view" style="display:none">
+      <div class="card">
+        <h2>Simulador de Compra</h2>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+          <input type="number" id="sim-custo" placeholder="Custo total R$" min="0" step="0.01">
+          <input type="number" id="sim-compradas" placeholder="Milhas compradas" min="0">
+          <input type="number" id="sim-saldo" placeholder="Saldo atual" min="0" value="0">
+          <input type="number" id="sim-bonus" placeholder="Bônus %" min="0" value="0" step="0.01">
+          <button onclick="calcSim()" class="primary">Calcular</button>
+        </div>
+        <div id="sim-resultado" style="margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <div id="view-calculadora" class="view" style="display:none">
+      <div class="card">
+        <h2>Calculadora C6 Black</h2>
+        <div class="toggle-group">
+          <button id="calc-nacional" onclick="setCalcMode('nacional', this)" class="active">Nacional</button>
+          <button id="calc-internacional" onclick="setCalcMode('internacional', this)">Internacional</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:12px;align-items:center;">
+          <input type="number" id="calc-gasto" placeholder="Gasto R$" min="0" step="0.01" oninput="calcC6()">
+          <span id="calc-cotacao-wrap"><input type="number" id="calc-cotacao" placeholder="Cotação US$" min="0" step="0.01" value="5.5" oninput="calcC6()"></span>
+          <span id="calc-resultado" style="font-size:1.2rem;color:var(--accent);"></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-cartoes" class="view" style="display:none">
+      <div class="card">
+        <h2>Cartões</h2>
+        <form onsubmit="addCartao(event)">
+          <input type="text" id="cart-nome" placeholder="Nome" required>
+          <input type="number" id="cart-fecha" placeholder="Dia fechamento" min="1" max="31" required>
+          <input type="number" id="cart-vence" placeholder="Dia vencimento" min="1" max="31" required>
+          <button type="submit" class="primary">Adicionar</button>
+        </form>
+        <table style="margin-top:16px;">
+          <thead><tr><th>Nome</th><th>Fecha</th><th>Vence</th></tr></thead>
+          <tbody id="cartoes-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-confirm" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h3 id="modal-title">Confirmar Lançamento</h3>
+      <div class="summary" id="modal-summary"></div>
+      <div class="btns">
+        <button onclick="fecharModal()">Cancelar</button>
+        <button class="primary" id="modal-confirm-btn" onclick="confirmarModal()">Confirmar Lançamento</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+    const PROGS = ['Livelo','Esfera','Átomos','Smiles','Azul','LATAM','Inter','Itaú'];
+    const SCRIPT_URL = ''; // Configure sua URL do Google Apps Script
+    // AUTH_TOKEN: o doPost() do Apps Script deve validar o header X-Auth-Token antes de aceitar escrita
+    const AUTH_TOKEN = SCRIPT_URL ? 'mp_' + btoa(SCRIPT_URL.slice(-12)) : '';
+    const STORAGE_KEY = 'milhas_pro_v50';
+    let _syncing = false;
+
+    let db = {
+      schemaVersion: 1,
+      updatedAt: Date.now(),
+      saldos: { Livelo: 0, Esfera: 0, Átomos: 0, Smiles: 0, Azul: 0, LATAM: 0, Inter: 0, Itaú: 0 },
+      ops: [],
+      parcelas: [],
+      cartoes: []
+    };
+
+    let _pendingAction = null;
+    let _calcMode = 'nacional';
+
+    const StorageService = {
+      async load() { return carregarDados(); }, // MIGRATION READY
+      async save(data) { db = data; salvar(); }, // MIGRATION READY
+      getLocalVersion() { try { const r = localStorage.getItem(STORAGE_KEY); return r ? migrateDB(JSON.parse(r)) : null; } catch (e) { return null; } }, // MIGRATION READY
+      async getCloudVersion() { if (!SCRIPT_URL) return null; const r = await fetch(SCRIPT_URL + '?action=get'); return r.ok ? migrateDB(await r.json()) : null; }, // MIGRATION READY
+      clearLocal() { localStorage.removeItem(STORAGE_KEY); } // MIGRATION READY
+    };
+
+    const MilesService = {
+      addCompra(data, prog, qtd, valor, parc) { _doCompra(data, prog, qtd, valor, parc); return { success: true, message: 'Compra registrada', data: db }; }, // MIGRATION READY
+      addVenda(data, prog, qtd, valor) { _doVenda(data, prog, qtd, valor); return { success: true, message: 'Venda registrada', data: db }; }, // MIGRATION READY
+      addTransferencia(data, ori, des, qtd, bonus) { _doTransf(data, ori, des, qtd, bonus); return { success: true, message: 'Transferência registrada', data: db }; }, // MIGRATION READY
+      getCMP(programa) { return getCMP(programa); }, // MIGRATION READY
+      getLucroRealizado() { return (db.ops || []).reduce((s, op) => { if (op.tipo === 'VENDA') return s + (op.valor || 0); if (op.tipo === 'COMPRA' || op.tipo === 'TRANSF') return s - (op.valor || 0); return s; }, 0); }, // MIGRATION READY
+      getFluxo30dias() { const d30 = new Date(); d30.setDate(d30.getDate() - 30); return (db.ops || []).filter(op => new Date(op.data) >= d30).length; } // MIGRATION READY
+    };
+
+    const UIController = {
+      render() { renderizarTudo(); }, // MIGRATION READY
+      showToast(msg, type) { showToast(msg, type); }, // MIGRATION READY
+      showModal(title, summary, onConfirm) { abrirModal(title, summary, onConfirm); }, // MIGRATION READY
+      updateDashboard(stats) { updateDashboardStats(stats); }, // MIGRATION READY
+      updateHistorico(ops) { updateHist(); }, // MIGRATION READY
+      updateSaldos(saldos, cmps) { /* usado em renderizarTudo */ } // MIGRATION READY
+    };
+
+    function updateDashboardStats(stats) {
+      const elTotal = document.getElementById('d-total');
+      if (elTotal) elTotal.textContent = (stats.total || 0).toLocaleString('pt-BR');
+      const elLucro = document.getElementById('d-lucro');
+      if (elLucro) { elLucro.textContent = (stats.lucro || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); elLucro.style.color = (stats.lucro || 0) >= 0 ? 'var(--success)' : 'var(--danger)'; }
+      const elOps = document.getElementById('d-ops30');
+      if (elOps) elOps.textContent = stats.ops30 || 0;
+    }
+
+    function sanitizeDB(data) {
+      const d = JSON.parse(JSON.stringify(data));
+      if (d.saldos) {
+        for (const p of PROGS) {
+          if (d.saldos[p] == null || isNaN(d.saldos[p])) {
+            console.warn('sanitizeDB: corrigido saldo inválido', p, d.saldos[p]);
+            d.saldos[p] = 0;
+          }
+        }
+      }
+      if (d.ops) {
+        const before = d.ops.length;
+        d.ops = d.ops.filter(op => !(isNaN(op.qtd) || isNaN(op.valor) || op.qtd <= 0));
+        if (d.ops.length < before) console.warn('sanitizeDB: removidas', before - d.ops.length, 'ops inválidas');
+      }
+      if (d.parcelas) {
+        const before = d.parcelas.length;
+        d.parcelas = d.parcelas.filter(p => !(isNaN(p.value) || p.value <= 0));
+        if (d.parcelas.length < before) console.warn('sanitizeDB: removidas parcelas inválidas');
+      }
+      return d;
+    }
+
+    function migrateDB(rawData) {
+      const d = rawData || {};
+      if (d.schemaVersion == null || d.schemaVersion < 1) {
+        d.saldos = d.saldos || Object.fromEntries(PROGS.map(p => [p, 0]));
+        d.ops = d.ops || [];
+        d.parcelas = d.parcelas || [];
+        d.cartoes = d.cartoes || [];
+      }
+      d.schemaVersion = 1;
+      return d;
+    }
+
+    function showToast(message, type) {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const icons = { success: '✓', error: '✗', warning: '⚠' };
+      const div = document.createElement('div');
+      div.className = 'toast ' + (type || 'success');
+      div.textContent = (icons[type] || '') + ' ' + message;
+      container.appendChild(div);
+      setTimeout(() => {
+        div.style.opacity = '0';
+        div.style.transition = 'opacity 0.3s';
+        setTimeout(() => div.remove(), 300);
+      }, 3000);
+    }
+
+    function setSyncStatus(text, status) {
+      const el = document.getElementById('sync-status');
+      if (!el) return;
+      el.classList.remove('sync-ok', 'sync-loading', 'sync-error');
+      if (status) el.classList.add('sync-' + status);
+      el.textContent = text || '';
+    }
+
+    function updateFaturas() {
+      const tbody = document.getElementById('faturas-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      let hasOpen = false;
+      const hoje = new Date();
+      for (const cartao of db.cartoes) {
+        const total = (db.parcelas || []).filter(p => !p.pago && p.cartao === cartao.nome).reduce((s, p) => s + (p.value || 0), 0);
+        if (total <= 0) continue;
+        hasOpen = true;
+        const vence = cartao.vence || 10;
+        let prox = new Date(hoje.getFullYear(), hoje.getMonth(), vence);
+        if (prox <= hoje) prox = new Date(hoje.getFullYear(), hoje.getMonth() + 1, vence);
+        const dias = Math.ceil((prox - hoje) / (1000 * 60 * 60 * 24));
+        const tr = document.createElement('tr');
+        const tdDias = document.createElement('td');
+        tdDias.textContent = dias;
+        if (dias <= 5) tdDias.style.color = 'var(--danger)';
+        tr.innerHTML = '<td>' + cartao.nome + '</td><td>R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '</td><td>' + prox.toLocaleDateString('pt-BR') + '</td>';
+        tr.appendChild(tdDias);
+        tbody.appendChild(tr);
+      }
+      if (!hasOpen) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td colspan="4">Nenhuma fatura em aberto</td>';
+        tbody.appendChild(tr);
+      }
+    }
+
+    function getCMP(programa) {
+      const compras = (db.ops || []).filter(op => op.item === programa && op.tipo === 'COMPRA');
+      const somaValor = compras.reduce((s, op) => s + (op.valor || 0), 0);
+      const somaQtd = compras.reduce((s, op) => s + (op.qtd || 0), 0);
+      if (somaQtd <= 0) return 0;
+      return (somaValor / somaQtd) * 1000;
+    }
+
+    function renderizarTudo() {
+      const total = Object.values(db.saldos || {}).reduce((a, b) => a + (b || 0), 0);
+      const elTotal = document.getElementById('d-total');
+      if (elTotal) elTotal.textContent = total.toLocaleString('pt-BR');
+
+      const lucro = (db.ops || []).reduce((s, op) => {
+        if (op.tipo === 'VENDA') return s + (op.valor || 0);
+        if (op.tipo === 'COMPRA' || op.tipo === 'TRANSF') return s - (op.valor || 0);
+        return s;
+      }, 0);
+      const elLucro = document.getElementById('d-lucro');
+      if (elLucro) {
+        elLucro.textContent = lucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        elLucro.style.color = lucro >= 0 ? 'var(--success)' : 'var(--danger)';
+      }
+
+      const d30 = new Date();
+      d30.setDate(d30.getDate() - 30);
+      const ops30 = (db.ops || []).filter(op => new Date(op.data) >= d30).length;
+      const elOps = document.getElementById('d-ops30');
+      if (elOps) elOps.textContent = ops30;
+
+      updateFaturas();
+
+      const grid = document.getElementById('saldos-grid');
+      if (grid) {
+        grid.innerHTML = '';
+        for (const p of PROGS) {
+          const saldo = (db.saldos || {})[p] || 0;
+          const cmp = getCMP(p);
+          const div = document.createElement('div');
+          div.className = 'stat';
+          div.innerHTML = '<span>' + p + '</span><strong>' + saldo.toLocaleString('pt-BR') + '</strong><div class="cmp-label">CMP: R$ ' + (cmp > 0 ? cmp.toFixed(2) : '—') + ' /1k</div>';
+          grid.appendChild(div);
+        }
+      }
+
+      ['c-prog','v-prog','tr-origem','tr-destino'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const isDest = id === 'tr-destino';
+        sel.innerHTML = '<option value="">Selecione</option>' + PROGS.map(p => {
+          if (id === 'tr-origem' && (db.saldos || {})[p] <= 0) return '';
+          if (id === 'tr-destino') return '<option value="' + p + '">' + p + '</option>';
+          return '<option value="' + p + '">' + p + '</option>';
+        }).join('');
+      });
+
+      updateHist();
+      updateCartoes();
+      updateTransfPreview();
+    }
+
+    function updateHist() {
+      const tbody = document.getElementById('historico-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      const ops = (db.ops || []).slice().reverse();
+      ops.forEach((op, idx) => {
+        const realIdx = db.ops.length - 1 - idx;
+        const tr = document.createElement('tr');
+        tr.className = op.tipo === 'VENDA' ? 'row-venda' : op.tipo === 'COMPRA' ? 'row-compra' : '';
+        const valorFmt = (op.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        tr.innerHTML = '<td>' + (op.data || '') + '</td><td>' + (op.tipo || '') + '</td><td>' + (op.item || '') + '</td><td>' + (op.qtd || 0).toLocaleString('pt-BR') + '</td><td>' + valorFmt + '</td><td><button class="btn-excluir" onclick="excluirOp(' + realIdx + ')" title="Excluir">✕</button></td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    function excluirOp(index) {
+      if (index < 0 || index >= (db.ops || []).length) return;
+      showToast('Operação excluída', 'success');
+      db.ops.splice(index, 1);
+      salvar();
+      renderizarTudo();
+    }
+
+    function updateCartoes() {
+      const tbody = document.getElementById('cartoes-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      (db.cartoes || []).forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + (c.nome || '') + '</td><td>' + (c.fecha || '') + '</td><td>' + (c.vence || '') + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateTransfPreview() {
+      const qtd = parseFloat(document.getElementById('tr-qtd')?.value) || 0;
+      const bonus = parseFloat(document.getElementById('tr-bonus')?.value) || 0;
+      const dest = document.getElementById('tr-destino')?.value || '';
+      const el = document.getElementById('transf-preview');
+      if (!el) return;
+      if (qtd <= 0 || !dest) { el.textContent = ''; return; }
+      const recebidas = Math.floor(qtd * (1 + bonus / 100));
+      el.textContent = qtd.toLocaleString('pt-BR') + ' milhas enviadas → ' + recebidas.toLocaleString('pt-BR') + ' milhas recebidas em ' + dest;
+    }
+
+    function mostrarForm(tipo) {
+      document.querySelectorAll('.form-block').forEach(el => el.style.display = 'none');
+      const f = document.getElementById('form-' + tipo);
+      if (f) f.style.display = 'block';
+      if (tipo === 'transf') {
+        document.getElementById('tr-qtd').addEventListener('input', updateTransfPreview);
+        document.getElementById('tr-bonus').addEventListener('input', updateTransfPreview);
+        document.getElementById('tr-destino').addEventListener('change', updateTransfPreview);
+        updateTransfPreview();
+      }
+    }
+
+    function navegar(id, btn) {
+      document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+      document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+      const v = document.getElementById('view-' + id);
+      if (v) v.style.display = 'block';
+      if (btn) btn.classList.add('active');
+      renderizarTudo();
+      if (id === 'calculadora') calcC6();
+    }
+
+    function abrirModal(title, summary, onConfirm) {
+      _pendingAction = onConfirm;
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-summary').textContent = summary;
+      document.getElementById('modal-confirm').classList.remove('hidden');
+    }
+
+    function fecharModal() {
+      _pendingAction = null;
+      document.getElementById('modal-confirm').classList.add('hidden');
+    }
+
+    function confirmarModal() {
+      if (_pendingAction) _pendingAction();
+      fecharModal();
+    }
+
+    function executarAcao(tipo, ev) {
+      if (ev) ev.preventDefault();
+      const hoje = new Date().toISOString().slice(0, 10);
+
+      if (tipo === 'compra') {
+        const qtd = parseFloat(document.getElementById('c-qtd')?.value);
+        const valor = parseFloat(document.getElementById('c-valor')?.value);
+        const parc = parseInt(document.getElementById('c-parc')?.value, 10) || 1;
+        const prog = document.getElementById('c-prog')?.value;
+        const data = document.getElementById('c-data')?.value || hoje;
+        if (isNaN(qtd) || qtd <= 0) { showToast('Quantidade inválida', 'error'); return; }
+        if (isNaN(valor) || valor <= 0) { showToast('Valor inválido', 'error'); return; }
+        if (isNaN(parc) || parc < 1) { showToast('Parcelas inválidas', 'error'); return; }
+        if (!prog) { showToast('Selecione o programa', 'error'); return; }
+        const summary = 'Compra: ' + qtd.toLocaleString('pt-BR') + ' milhas em ' + prog + ' por R$ ' + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + ' (' + parc + 'x)';
+        abrirModal('Confirmar Compra', summary, () => {
+          _doCompra(data, prog, qtd, valor, parc);
+        });
+        return;
+      }
+
+      if (tipo === 'venda') {
+        const qtd = parseFloat(document.getElementById('v-qtd')?.value);
+        const valor = parseFloat(document.getElementById('v-valor')?.value);
+        const prog = document.getElementById('v-prog')?.value;
+        const data = document.getElementById('v-data')?.value || hoje;
+        const saldoProg = (db.saldos || {})[prog] || 0;
+        if (isNaN(qtd) || qtd <= 0) { showToast('Quantidade inválida', 'error'); return; }
+        if (isNaN(valor) || valor <= 0) { showToast('Valor inválido', 'error'); return; }
+        if (qtd > saldoProg) { showToast('Saldo insuficiente em ' + prog, 'error'); return; }
+        if (!prog) { showToast('Selecione o programa', 'error'); return; }
+        const summary = 'Venda: ' + qtd.toLocaleString('pt-BR') + ' milhas de ' + prog + ' por R$ ' + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        abrirModal('Confirmar Venda', summary, () => {
+          _doVenda(data, prog, qtd, valor);
+        });
+        return;
+      }
+
+      if (tipo === 'transf') {
+        const qtd = parseFloat(document.getElementById('tr-qtd')?.value);
+        const bonus = parseFloat(document.getElementById('tr-bonus')?.value) || 0;
+        const ori = document.getElementById('tr-origem')?.value;
+        const des = document.getElementById('tr-destino')?.value;
+        const data = document.getElementById('tr-data')?.value || hoje;
+        const saldoOri = (db.saldos || {})[ori] || 0;
+        if (isNaN(qtd) || qtd <= 0) { showToast('Quantidade inválida', 'error'); return; }
+        if (qtd > saldoOri) { showToast('Saldo insuficiente em ' + ori, 'error'); return; }
+        if (ori === des) { showToast('Origem e destino devem ser diferentes', 'error'); return; }
+        if (!ori || !des) { showToast('Selecione origem e destino', 'error'); return; }
+        const recebidas = Math.floor(qtd * (1 + bonus / 100));
+        const valor = 0;
+        const summary = 'Transferência: ' + qtd.toLocaleString('pt-BR') + ' de ' + ori + ' → ' + recebidas.toLocaleString('pt-BR') + ' em ' + des;
+        abrirModal('Confirmar Transferência', summary, () => {
+          _doTransf(data, ori, des, qtd, valor);
+        });
+        return;
+      }
+    }
+
+    function _doCompra(data, prog, qtd, valor, parc) {
+      db.saldos[prog] = (db.saldos[prog] || 0) + qtd;
+      db.ops.push({ data, item: prog, qtd, tipo: 'COMPRA', valor });
+      if (db.cartoes && db.cartoes.length > 0 && parc >= 1) {
+        const valorParc = valor / parc;
+        for (let i = 0; i < parc; i++) {
+          db.parcelas.push({ cartao: db.cartoes[0].nome, value: valorParc, pago: false });
+        }
+      } else if (db.cartoes && db.cartoes.length === 0) {
+        showToast('Nenhum cartão cadastrado — operação salva sem parcelas', 'warning');
+      }
+      salvar();
+      renderizarTudo();
+      showToast('Compra registrada', 'success');
+    }
+
+    function _doVenda(data, prog, qtd, valor) {
+      db.saldos[prog] = (db.saldos[prog] || 0) - qtd;
+      db.ops.push({ data, item: prog, qtd, tipo: 'VENDA', valor });
+      salvar();
+      renderizarTudo();
+      showToast('Venda registrada', 'success');
+    }
+
+    function _doTransf(data, ori, des, qtd, valor) {
+      const bonus = parseFloat(document.getElementById('tr-bonus')?.value) || 0;
+      const recebidas = Math.floor(qtd * (1 + bonus / 100));
+      db.saldos[ori] = (db.saldos[ori] || 0) - qtd;
+      db.saldos[des] = (db.saldos[des] || 0) + recebidas;
+      db.ops.push({ data, item: ori + '→' + des, qtd, tipo: 'TRANSF', valor: 0 });
+      salvar();
+      renderizarTudo();
+      showToast('Transferência registrada', 'success');
+    }
+
+    function calcSim() {
+      const custo = parseFloat(document.getElementById('sim-custo')?.value) || 0;
+      const compradas = parseFloat(document.getElementById('sim-compradas')?.value) || 0;
+      const saldoB = parseFloat(document.getElementById('sim-saldo')?.value) || 0;
+      const bonus = parseFloat(document.getElementById('sim-bonus')?.value) || 0;
+      const milhasFinais = compradas * (1 + bonus / 100) + saldoB;
+      const denomCompra = (compradas + saldoB) * (1 + bonus / 100);
+      const cpmCompra = denomCompra > 0 ? (custo / denomCompra) * 1000 : null;
+      const cpmMedio = milhasFinais > 0 ? (custo / milhasFinais) * 1000 : null;
+      const el = document.getElementById('sim-resultado');
+      if (!el) return;
+      el.innerHTML = '<div>CPM Compra: ' + (cpmCompra != null ? 'R$ ' + cpmCompra.toFixed(2) + ' /1k' : '—') + '</div>' +
+        '<div>CPM Médio Operação: ' + (cpmMedio != null ? 'R$ ' + cpmMedio.toFixed(2) + ' /1k' : '—') + '</div>' +
+        '<div>Milhas finais: ' + (milhasFinais || 0).toLocaleString('pt-BR') + '</div>';
+    }
+
+    function setCalcMode(mode, btn) {
+      _calcMode = mode;
+      document.querySelectorAll('.toggle-group button').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      const wrap = document.getElementById('calc-cotacao-wrap');
+      if (wrap) wrap.style.display = mode === 'internacional' ? 'inline' : 'none';
+      calcC6();
+    }
+
+    function calcC6() {
+      const gasto = parseFloat(document.getElementById('calc-gasto')?.value) || 0;
+      const cotacao = parseFloat(document.getElementById('calc-cotacao')?.value) || 5.5;
+      let pontos = 0;
+      if (_calcMode === 'nacional') {
+        pontos = Math.floor(gasto * 2);
+      } else {
+        pontos = Math.floor((gasto / cotacao) * 2.5);
+      }
+      const el = document.getElementById('calc-resultado');
+      if (el) el.textContent = gasto > 0 ? pontos.toLocaleString('pt-BR') + ' pontos' : '';
+    }
+
+    function addCartao(ev) {
+      ev.preventDefault();
+      const nome = document.getElementById('cart-nome')?.value;
+      const fecha = parseInt(document.getElementById('cart-fecha')?.value, 10);
+      const vence = parseInt(document.getElementById('cart-vence')?.value, 10);
+      if (!nome || !fecha || !vence) return;
+      db.cartoes = db.cartoes || [];
+      db.cartoes.push({ id: Date.now(), nome, fecha, vence });
+      document.getElementById('cart-nome').value = '';
+      document.getElementById('cart-fecha').value = '';
+      document.getElementById('cart-vence').value = '';
+      salvar();
+      renderizarTudo();
+      showToast('Cartão adicionado', 'success');
+    }
+
+    function salvar() {
+      if (_syncing) return;
+      _syncing = true;
+      db.updatedAt = Date.now();
+      const clean = sanitizeDB(db);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+        if (SCRIPT_URL) {
+          fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Auth-Token': AUTH_TOKEN },
+            body: JSON.stringify(clean)
+          }).then(r => {
+            setSyncStatus('Sincronizado', 'ok');
+          }).catch(() => {
+            setSyncStatus('Erro ao sincronizar', 'error');
+          }).finally(() => { _syncing = false; });
+        } else {
+          setSyncStatus('Salvo localmente', 'ok');
+          _syncing = false;
+        }
+      } catch (e) {
+        _syncing = false;
+        showToast('Erro ao salvar', 'error');
+      }
+    }
+
+    async function carregarDados() {
+      document.getElementById('banner-offline')?.classList.add('hidden');
+      let localData = null;
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) localData = migrateDB(JSON.parse(raw));
+      } catch (e) {}
+      let cloudData = null;
+      const maxRetries = 3;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        setSyncStatus(attempt > 1 ? 'Reconectando... (' + attempt + '/' + maxRetries + ')' : 'Carregando...', 'loading');
+        try {
+          if (SCRIPT_URL) {
+            const r = await fetch(SCRIPT_URL + '?action=get');
+            if (r.ok) cloudData = await r.json();
+          }
+          break;
+        } catch (e) {
+          if (attempt === maxRetries) {
+            if (localData) {
+              db = localData;
+              document.getElementById('banner-offline')?.classList.remove('hidden');
+              showToast('Modo offline — usando dados locais', 'warning');
+            }
+            setSyncStatus('Offline', 'error');
+            return;
+          }
+          await new Promise(r => setTimeout(r, attempt * 2000));
+        }
+      }
+      if (cloudData) {
+        cloudData = migrateDB(cloudData);
+        const cloudTs = cloudData.updatedAt || 0;
+        const localTs = localData?.updatedAt || 0;
+        if (localTs > cloudTs && localData) {
+          db = localData;
+          showToast('Dados locais mais recentes — ignorando nuvem', 'warning');
+        } else {
+          db = cloudData;
+        }
+      } else if (localData) {
+        db = localData;
+      }
+      setSyncStatus('Carregado', 'ok');
+      renderizarTudo();
+    }
+
+    function exportCSV() {
+      const cols = ['Data', 'Tipo', 'Programa', 'Quantidade', 'Valor (R$)', 'CPM'];
+      let csv = cols.join(';') + '\n';
+      let totQtd = 0, totValor = 0;
+      (db.ops || []).forEach(op => {
+        const cpm = op.qtd > 0 ? ((op.valor || 0) / op.qtd * 1000).toFixed(2) : '';
+        csv += [op.data, op.tipo, op.item, op.qtd, (op.valor || 0).toFixed(2), cpm].join(';') + '\n';
+        totQtd += op.qtd || 0;
+        totValor += op.valor || 0;
+      });
+      csv += ';;' + totQtd.toFixed(0) + ';' + totValor.toFixed(2) + ';\n';
+      const a = document.createElement('a');
+      a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      a.download = 'milhas-pro-operacoes-' + new Date().toISOString().slice(0, 7) + '.csv';
+      a.click();
+      showToast('CSV exportado', 'success');
+    }
+
+    function exportDRE() {
+      const meses = [];
+      const hoje = new Date();
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+        meses.push(d.toISOString().slice(0, 7));
+      }
+      const cols = ['Mês', 'Receitas', 'Custos', 'Lucro', 'ROI %'];
+      let csv = cols.join(';') + '\n';
+      meses.forEach(mes => {
+        const ops = (db.ops || []).filter(op => (op.data || '').slice(0, 7) === mes);
+        const receitas = ops.filter(o => o.tipo === 'VENDA').reduce((s, o) => s + (o.valor || 0), 0);
+        const custos = ops.filter(o => o.tipo === 'COMPRA' || o.tipo === 'TRANSF').reduce((s, o) => s + (o.valor || 0), 0);
+        const lucro = receitas - custos;
+        const roi = custos > 0 ? ((lucro / custos) * 100).toFixed(1) : '0';
+        csv += [mes, receitas.toFixed(2), custos.toFixed(2), lucro.toFixed(2), roi].join(';') + '\n';
+      });
+      const a = document.createElement('a');
+      a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      a.download = 'milhas-pro-dre-12meses.csv';
+      a.click();
+      showToast('DRE exportado', 'success');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const c = document.getElementById('toast-container');
+      if (!c && document.body) {
+        const div = document.createElement('div');
+        div.id = 'toast-container';
+        document.body.appendChild(div);
+      }
+      ['tr-qtd','tr-bonus','tr-destino'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateTransfPreview);
+      });
+      document.getElementById('tr-destino')?.addEventListener('change', updateTransfPreview);
+      const d = new Date().toISOString().slice(0, 10);
+      ['c-data','v-data','tr-data'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el.value) el.value = d;
+      });
+      const cw = document.getElementById('calc-cotacao-wrap'); if (cw) cw.style.display = 'none';
+      carregarDados();
+    });
+
+    /* SUPABASE_MIGRATION_SCHEMA
+       users:        id (uuid), email, plan ('free'|'pro'|'expert'), created_at
+       programs:     id, name, currency_name, expiry_months
+       balances:     id, user_id, program_id, amount, updated_at
+       operations:   id, user_id, type, program_id, quantity, value, date, data_rec
+       cards:        id, user_id, name, closing_day, due_day
+       installments: id, card_id, operation_id, value, due_date, paid (bool)
+       mile_prices:  id, program_id, cpm, source, captured_at
+    */
+  </script>
+</body>
+</html>
