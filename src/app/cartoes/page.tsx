@@ -1,8 +1,8 @@
 diff --git a/src/app/cartoes/page.tsx b/src/app/cartoes/page.tsx
-index 07781d2b2e82d439dba5a34e9a14025eb8e7d1b6..fca67436d3baed14daead41046682298756b8e2b 100644
+index 07781d2b2e82d439dba5a34e9a14025eb8e7d1b6..0510e7431e046ca6eb4f848c68756ff350786d79 100644
 --- a/src/app/cartoes/page.tsx
 +++ b/src/app/cartoes/page.tsx
-@@ -1,38 +1,31 @@
+@@ -1,38 +1,38 @@
 -diff --git a/src/app/cartoes/page.tsx b/src/app/cartoes/page.tsx
 -index d0c35fa0a028d1a94429c58b87e32cd72d79cd41..7b4dfbc8fc3bed2870a5056151d0afd68a397af1 100644
 ---- a/src/app/cartoes/page.tsx
@@ -47,28 +47,35 @@ index 07781d2b2e82d439dba5a34e9a14025eb8e7d1b6..fca67436d3baed14daead41046682298
 +
 +export default async function CartoesPage() {
 +  const supabase = await createClient()
-+  const {
-+    data: { user },
-+  } = await supabase.auth.getUser()
++  const { data: { user } } = await supabase.auth.getUser()
 +  if (!user) redirect('/login')
 +
-+  const [{ data: cartoes }, { data: faturas }] = await Promise.all([
-+    supabase.from('cartoes').select('*').eq('user_id', user.id).order('nome', { ascending: true }),
-+    supabase.from('faturas_parcelas').select('*').eq('user_id', user.id).eq('pago', false),
++  const [{ data: cartoes }, { data: faturasAtivas }] = await Promise.all([
++    supabase
++      .from('cartoes')
++      .select('*')
++      .eq('user_id', user.id)
++      .order('nome', { ascending: true }),
++    supabase
++      .from('faturas_parcelas')
++      .select('*')
++      .eq('user_id', user.id)
++      .eq('pago', false),
 +  ])
 +
 +  const db = {
 +    cartoes: cartoes || [],
-+    faturas: faturas || [],
 +    profile: null,
 +    programs: [],
 +    saldos: [],
 +    operacoes: [],
++    faturas: faturasAtivas || [],
 +    metas: [],
 +    market_prices: [],
 +    market_news: [],
-+    user_alerts: [],
++    user_alerts: []
 +  }
 +
 +  return <CartoesRoute db={db as any} />
 +}
++

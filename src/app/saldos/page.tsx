@@ -1,8 +1,8 @@
 diff --git a/src/app/saldos/page.tsx b/src/app/saldos/page.tsx
-index 146cdbea284ba17c3b6dc2695247345dc9e4bbaf..8102e7912285facf7cdf6059b1ccab88731f9acf 100644
+index 146cdbea284ba17c3b6dc2695247345dc9e4bbaf..65b308661ce64e1594de7b99c0706e59a0b2dba5 100644
 --- a/src/app/saldos/page.tsx
 +++ b/src/app/saldos/page.tsx
-@@ -1,48 +1,48 @@
+@@ -1,48 +1,41 @@
 -diff --git a/src/app/saldos/page.tsx b/src/app/saldos/page.tsx
 -index d0281d55757b60588e18141198b84006cd42f8e5..65b308661ce64e1594de7b99c0706e59a0b2dba5 100644
 ---- a/src/app/saldos/page.tsx
@@ -57,35 +57,28 @@ index 146cdbea284ba17c3b6dc2695247345dc9e4bbaf..8102e7912285facf7cdf6059b1ccab88
 +
 +export default async function SaldosPage() {
 +  const supabase = await createClient()
-+  const {
-+    data: { user },
-+  } = await supabase.auth.getUser()
++  const { data: { user } } = await supabase.auth.getUser()
 +  if (!user) redirect('/login')
 +
-+  const [{ data: programs }, { data: balances }] = await Promise.all([
++  const [
++    { data: programs },
++    { data: balances }
++  ] = await Promise.all([
 +    supabase.from('programs').select('*').or(`user_id.is.null,user_id.eq.${user.id}`).order('name'),
-+    supabase.from('balances').select('*, programs(*)').eq('user_id', user.id),
++    supabase.from('balances').select('*, programs(*)').eq('user_id', user.id)
 +  ])
 +
-+  const serializedPrograms = (programs || []).map((p: any) => ({
-+    id: String(p.id),
-+    name: String(p.name),
-+    currency_name: p.currency_name ?? null,
-+    user_id: p.user_id ?? null,
-+    created_at: String(p.created_at),
-+  }))
-+
 +  const formattedSaldos = (balances || []).map((s: any) => ({
-+    program_id: String(s.program_id),
-+    nome_programa: String(s.programs?.name || '?'),
++    program_id: s.program_id,
++    nome_programa: s.programs?.name || '?',
 +    saldo_atual: Number(s.calculated_balance) || 0,
 +    ajuste_manual: s.manual_adjustment,
-+    usar_ajuste_manual: s.manual_adjustment !== null && s.manual_adjustment !== 0,
++    usar_ajuste_manual: (s.manual_adjustment !== null && s.manual_adjustment !== 0),
 +    custo_medio: Number(s.custo_medio) || 0,
 +  }))
 +
 +  const db = {
-+    programs: serializedPrograms,
++    programs: programs || [],
 +    saldos: formattedSaldos,
 +    profile: null,
 +    operacoes: [],
@@ -94,7 +87,7 @@ index 146cdbea284ba17c3b6dc2695247345dc9e4bbaf..8102e7912285facf7cdf6059b1ccab88
 +    metas: [],
 +    market_prices: [],
 +    market_news: [],
-+    user_alerts: [],
++    user_alerts: []
 +  }
 +
 +  return <SaldosRoute db={db as any} />

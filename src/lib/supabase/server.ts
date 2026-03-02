@@ -1,14 +1,24 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+function getSupabaseEnv() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+
+  return { supabaseUrl, supabaseKey }
+}
+
+export function hasSupabaseEnv() {
+  const { supabaseUrl, supabaseKey } = getSupabaseEnv()
+  return Boolean(supabaseUrl && supabaseKey)
+}
+
 export async function createClient() {
   const cookieStore = await cookies()
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const { supabaseUrl, supabaseKey } = getSupabaseEnv()
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error('As variáveis de ambiente do Supabase não estão configuradas. Por favor, adicione NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.')
+    throw new Error('As variáveis de ambiente do Supabase não estão configuradas. Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY (ou NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY).')
   }
 
   return createServerClient(
