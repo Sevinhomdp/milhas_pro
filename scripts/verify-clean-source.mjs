@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 
 const tracked = execSync('git ls-files', { encoding: 'utf8' })
@@ -9,6 +9,7 @@ const tracked = execSync('git ls-files', { encoding: 'utf8' })
 const problems = []
 
 for (const file of tracked) {
+  if (!existsSync(file)) continue
   const content = readFileSync(file, 'utf8')
   const firstLine = content.split('\n', 1)[0] ?? ''
 

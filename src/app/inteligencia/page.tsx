@@ -1,4 +1,4 @@
-import { createClient } from '@/src/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { InteligenciaRoute } from '@/src/components/routes/InteligenciaRoute'
 import { Database } from '@/src/types'
@@ -12,7 +12,7 @@ export default async function InteligenciaPage() {
     { data: saldos },
     { data: marketPrices },
     { data: marketNews },
-    { data: userAlerts },
+    { data: userAlertsConfig },
   ] = await Promise.all([
     supabase
       .from('balances')
@@ -28,7 +28,7 @@ export default async function InteligenciaPage() {
       .eq('ativa', true)
       .order('data_publicacao', { ascending: false }),
     supabase
-      .from('user_alerts')
+      .from('alertas_config')
       .select('*')
       .eq('user_id', user.id),
   ])
@@ -52,7 +52,7 @@ export default async function InteligenciaPage() {
     metas: [],
     market_prices: marketPrices || [],
     market_news: marketNews || [],
-    user_alerts: userAlerts || [],
+    user_alerts: (userAlertsConfig as any) || [],
   }
 
   return (

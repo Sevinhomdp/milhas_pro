@@ -10,6 +10,7 @@ import {
 } from 'recharts'
 import { cn, formatCurrency } from '@/src/lib/utils'
 import { motion, AnimatePresence } from 'motion/react'
+import { createAlertaConfig, updateAlertaConfig } from '@/src/app/actions/inteligencia'
 
 interface InteligenciaProps {
     db: Database
@@ -233,6 +234,46 @@ function RadarPromocoes({ db }: { db: Database }) {
 
 // 3. ALERTAS SMART
 function AlertasSmart({ db, toast }: { db: Database, toast: (m: string) => void }) {
+    const [isModalOpen, setIsModalOpen] = React.useState(false)
+    const [tipo, setTipo] = React.useState('promocao_transferencia')
+    const [threshold, setThreshold] = React.useState<string>('')
+    const [email, setEmail] = React.useState('')
+    const [isSaving, setIsSaving] = React.useState(false)
+    const [alerts, setAlerts] = React.useState<any[]>(db.user_alerts || [])
+
+    const shouldShowThreshold = ['preco_acima', 'preco_abaixo', 'fatura_vencimento'].includes(tipo)
+
+    async function handleCreateAlert() {
+        try {
+            setIsSaving(true)
+            await createAlertaConfig({
+                type: tipo,
+                threshold_value: shouldShowThreshold ? Number(threshold || 0) : null,
+                notification_channel: 'email',
+                contact_value: email,
+            })
+            toast('Alerta criado com sucesso')
+            setIsModalOpen(false)
+        } catch (error) {
+            console.error('Erro ao criar alerta:', error)
+            toast('Erro ao criar alerta')
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    async function handleToggle(alerta: any) {
+        try {
+            const nextValue = !(alerta.is_active ?? alerta.status === 'ACTIVE')
+            await updateAlertaConfig(alerta.id, { is_active: nextValue })
+            setAlerts((prev) => prev.map((item) => (item.id === alerta.id ? { ...item, is_active: nextValue } : item)))
+            toast('Alerta atualizado')
+        } catch (error) {
+            console.error('Erro ao atualizar alerta:', error)
+            toast('Erro ao atualizar alerta')
+        }
+    }
+
     return (
         <div className="max-w-2xl mx-auto space-y-6">
             <div className="bg-amber-500 p-8 rounded-3xl flex items-center justify-between text-slate-950 overflow-hidden relative group">
@@ -246,7 +287,7 @@ function AlertasSmart({ db, toast }: { db: Database, toast: (m: string) => void 
             </div>
 
             <div className="space-y-4">
-                {(db.user_alerts || []).map(alerta => (
+                {alerts.map(alerta => (
                     <div key={alerta.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-6 rounded-3xl shadow-sm flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-slate-100 dark:bg-white/5 rounded-2xl flex items-center justify-center">
@@ -254,23 +295,45 @@ function AlertasSmart({ db, toast }: { db: Database, toast: (m: string) => void 
                             </div>
                             <div>
                                 <h4 className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-widest">
-                                    {alerta.tipo_alerta.replace('_', ' ')}
+                                    {(alerta.type || alerta.tipo_alerta || '').replace('_', ' ')}
                                 </h4>
                                 <p className="text-[10px] font-bold text-slate-400">
-                                    Status: <span className={cn(alerta.status === 'ACTIVE' ? "text-emerald-500" : "text-amber-500")}>{alerta.status}</span>
+                                    Status: <span className={cn((alerta.is_active ?? alerta.status === 'ACTIVE') ? "text-emerald-500" : "text-amber-500")}>{(alerta.is_active ?? alerta.status === 'ACTIVE') ? 'ATIVO' : 'INATIVO'}</span>
                                 </p>
                             </div>
                         </div>
-                        <Button variant="secondary" className="h-10 px-4">Editar</Button>
+                        <Button variant="secondary" className="h-10 px-4" onClick={() => handleToggle(alerta)}>{(alerta.is_active ?? alerta.status === "ACTIVE") ? "Desativar" : "Ativar"}</Button>
                     </div>
                 ))}
 
-                <button className="w-full border-2 border-dashed border-slate-200 dark:border-white/5 p-6 rounded-3xl flex items-center justify-center gap-3 text-slate-400 hover:border-amber-500 hover:text-amber-500 transition-all group">
+                <button onClick={() => setIsModalOpen(true)} className="w-full border-2 border-dashed border-slate-200 dark:border-white/5 p-6 rounded-3xl flex items-center justify-center gap-3 text-slate-400 hover:border-amber-500 hover:text-amber-500 transition-all group">
                     <PlusCircle size={20} />
                     <span className="text-[10px] font-black uppercase tracking-widest">Novo Alerta de Mercado</span>
                 </button>
             </div>
-        </div>
+        
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+                    <div className="w-full max-w-lg bg-slate-950 border border-white/10 rounded-3xl p-6 space-y-4">
+                        <h4 className="text-sm font-black uppercase tracking-widest text-amber-500">Novo Alerta de Mercado</h4>
+                        <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl p-3 text-sm">
+                            <option value="promocao_transferencia">Promoção de Transferência</option>
+                            <option value="preco_acima">Preço acima de R$ X por milheiro</option>
+                            <option value="preco_abaixo">Preço abaixo de R$ X por milheiro</option>
+                            <option value="fatura_vencimento">Fatura vencendo em X dias</option>
+                        </select>
+                        {shouldShowThreshold && (
+                            <input type="number" value={threshold} onChange={(e) => setThreshold(e.target.value)} placeholder="Valor limite" className="w-full bg-black border border-white/10 rounded-xl p-3 text-sm" />
+                        )}
+                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@destino.com" className="w-full bg-black border border-white/10 rounded-xl p-3 text-sm" />
+                        <div className="flex justify-end gap-2">
+                            <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+                            <Button onClick={handleCreateAlert} disabled={isSaving}>{isSaving ? 'Salvando...' : 'Salvar'}</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+</div>
     )
 }
 
