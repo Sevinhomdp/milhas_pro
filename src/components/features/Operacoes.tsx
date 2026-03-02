@@ -21,15 +21,18 @@ type Score = { label: string; color: 'green' | 'yellow' | 'red' } | null
 
 export default function Operacoes({ db, toast }: OperacoesProps) {
     const { operacoes, cartoes, programs } = db
-    const programasBase = programs.length > 0
-        ? programs
-        : PROGS.map((name, i) => ({
-            id: `virtual-${i}-${name}`,
-            name,
-            currency_name: null,
-            user_id: null,
-            created_at: new Date(0).toISOString(),
-        }))
+    const programasBase = React.useMemo(
+        () => (programs.length > 0
+            ? programs
+            : PROGS.map((name, i) => ({
+                id: `virtual-${i}-${name}`,
+                name,
+                currency_name: null,
+                user_id: null,
+                created_at: new Date(0).toISOString(),
+            }))),
+        [programs]
+    )
 
     // M-08 FIX: Respeitar a seleção de "Programas Ativos" feita em Configurações.
     // Lê a lista do localStorage (mesma chave usada por Configuracoes.tsx).
@@ -41,12 +44,28 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
             if (saved) {
                 const ativos: string[] = JSON.parse(saved)
                 const filtrados = programasBase.filter(p => ativos.includes(p.name))
-                setProgramasFiltrados(filtrados.length > 0 ? filtrados : programasBase)
+                setProgramasFiltrados(prev => {
+                    const next = filtrados.length > 0 ? filtrados : programasBase
+                    if (prev.length === next.length && prev.every((item, i) => item.id === next[i]?.id)) {
+                        return prev
+                    }
+                    return next
+                })
             } else {
-                setProgramasFiltrados(programasBase)
+                setProgramasFiltrados(prev => {
+                    if (prev.length === programasBase.length && prev.every((item, i) => item.id === programasBase[i]?.id)) {
+                        return prev
+                    }
+                    return programasBase
+                })
             }
         } catch {
-            setProgramasFiltrados(programasBase)
+            setProgramasFiltrados(prev => {
+                if (prev.length === programasBase.length && prev.every((item, i) => item.id === programasBase[i]?.id)) {
+                    return prev
+                }
+                return programasBase
+            })
         }
     }, [programasBase])
 

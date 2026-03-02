@@ -298,26 +298,40 @@ export async function registrarPrograma(name: string, currency_name?: string) {
 
 export async function adicionarProgramaAoSaldo(programName: string) {
   const { supabase, user } = await getUser()
+  const normalizedProgramName = programName.trim()
 
-  const { data: existingProgram, error: existingProgramError } = await supabase
-    .from('programs')
-    .select('id, name, user_id')
-    .eq('name', programName)
-    .or(`user_id.is.null,user_id.eq.${user.id}`)
-    .order('user_id', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  if (!normalizedProgramName) {
+    throw new Error('Informe um programa válido para adicionar ao saldo.')
+  }
 
-  if (existingProgramError) throw new Error(existingProgramError.message)
+  let programId: string
 
-  const program = existingProgram || await registrarPrograma(programName)
+  try {
+    const program = await registrarPrograma(normalizedProgramName)
+    programId = program.id
+  } catch (error: any) {
+    const { data: fallbackProgram, error: fallbackError } = await supabase
+      .from('programs')
+      .select('id')
+      .eq('name', normalizedProgramName)
+      .or(`user_id.is.null,user_id.eq.${user.id}`)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+
+    if (fallbackError || !fallbackProgram?.id) {
+      throw new Error(error?.message || 'Não foi possível adicionar o programa ao saldo no momento.')
+    }
+
+    programId = fallbackProgram.id
+  }
 
   const { error: balanceError } = await supabase
     .from('balances')
     .upsert(
       {
         user_id: user.id,
-        program_id: program.id,
+        program_id: programId,
         manual_adjustment: 0,
         updated_at: new Date().toISOString(),
       },
