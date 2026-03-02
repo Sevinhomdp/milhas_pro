@@ -1,8 +1,8 @@
 diff --git a/src/lib/supabase/middleware.ts b/src/lib/supabase/middleware.ts
-index e923462974c03f9acade2c6afaa73be12c26aa89..61092bb0954e78a7e5107b5e54dd0a9ef105d4b6 100644
+index e923462974c03f9acade2c6afaa73be12c26aa89..31f3fc54050de062a18de47cb5bc26eaad65011f 100644
 --- a/src/lib/supabase/middleware.ts
 +++ b/src/lib/supabase/middleware.ts
-@@ -18,47 +18,52 @@ export async function updateSession(request: NextRequest) {
+@@ -18,47 +18,49 @@ export async function updateSession(request: NextRequest) {
    if (!supabaseUrl || !supabaseKey) {
      return supabaseResponse
    }
@@ -28,9 +28,6 @@ index e923462974c03f9acade2c6afaa73be12c26aa89..61092bb0954e78a7e5107b5e54dd0a9e
      }
    )
  
-+  // Garante a hidratação/renovação da sessão em requests SSR.
-+  // Sem essa chamada, páginas de Server Component podem receber
-+  // contexto de autenticação desatualizado após o login.
 +  await supabase.auth.getSession()
 +
    const {
