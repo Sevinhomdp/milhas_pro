@@ -36,3 +36,14 @@ Para evitar acoplamento entre Server Components e componentes de UI interativos,
 4. `page.tsx` não deve conter callbacks placeholder (ex.: `toast={() => {}}`, `toggleTheme={() => {}}`).
 
 Esse padrão mantém separação clara entre camada de dados (server) e camada interativa (client).
+
+
+## Variáveis de ambiente (produção / Vercel)
+
+Adicione também no projeto da Vercel:
+
+- `CRON_SECRET` (UUID aleatório para proteger `/api/cron/*`).
+- `GEMINI_API_KEY` (Google AI Studio).
+- `RESEND_API_KEY` (Resend).
+- `RESEND_FROM_EMAIL` (ex.: `alertas@milhas-pro.com`).
+- `SUPABASE_SERVICE_ROLE_KEY` (Supabase Settings → API → `service_role`, nunca expor no client).
