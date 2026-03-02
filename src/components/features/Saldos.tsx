@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Database, ProgramaSaldo } from '@/src/types'
 import { PROGS } from '@/src/constants'
 import { formatNumber, formatCurrency, cn } from '@/src/lib/utils'
-import { ajustarSaldoManual, registrarPrograma } from '@/src/app/actions'
+import { adicionarProgramaAoSaldo, ajustarSaldoManual } from '@/src/app/actions'
 import { Plus, Check, X, Search, ChevronDown, TrendingUp } from 'lucide-react'
 
 interface SaldosProps {
@@ -104,7 +104,7 @@ export default function Saldos({ db, toast }: SaldosProps) {
         if (!selectedProg) return
         setAddLoading(true)
         try {
-            await registrarPrograma(selectedProg)
+            await adicionarProgramaAoSaldo(selectedProg)
             toast(`Programa ${selectedProg} adicionado!`, 'success')
             setSelectedProg('')
         } catch (e: any) {
