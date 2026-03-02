@@ -90,7 +90,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 export function useToast() {
   const context = React.useContext(ToastContext)
   if (!context) {
-    throw new Error("useToast must be used within a ToastProvider")
+    return {
+      toast: () => {
+        // noop fallback for routes rendered outside AppShell/ToastProvider (e.g. static build)
+      },
+    }
   }
   return context
 }
