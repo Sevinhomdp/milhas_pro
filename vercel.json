@@ -1,1 +1,26 @@
-{\n  \"crons\": [\n    {\n      \"path\": \"/api/fetch-market-prices\",\n      \"schedule\": \"0 3 * * *\"\n    },\n    {\n      \"path\": \"/api/cron/update-prices\",\n      \"schedule\": \"0 8 * * *\"\n    },\n    {\n      \"path\": \"/api/cron/update-news\",\n      \"schedule\": \"0 9 * * *\"\n    },\n    {\n      \"path\": \"/api/cron/send-alerts\",\n      \"schedule\": \"0 */6 * * *\"\n    }\n  ],\n  \"rewrites\": [\n    {\n      \"source\": \"/api/:path((?!cron/).*)\",\n      \"destination\": \"https://xoegapeodtbncirqvlmi.supabase.co/functions/v1/:path\"\n    }\n  ]\n}
+{
+  "crons": [
+    {
+      "path": "/api/cron/fetch-market-prices",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/update-prices",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/update-news",
+      "schedule": "0 9 * * * "
+    },
+    {
+      "path": "/api/cron/send-alerts",
+      "schedule": "0 */6 * * *"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://xoegapeodtbncirqvlmi.supabase.co/functions/v1/$1"
+    }
+  ]
+}
