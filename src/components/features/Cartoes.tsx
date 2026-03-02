@@ -15,7 +15,7 @@ interface CartoesProps {
 }
 
 export default function Cartoes({ db, toast }: CartoesProps) {
-    const { cartoes } = db
+    const { cartoes, faturas } = db
     const [showForm, setShowForm] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     const [nome, setNome] = React.useState('')
@@ -65,6 +65,19 @@ export default function Cartoes({ db, toast }: CartoesProps) {
             setLoadDolar(false)
         }
     }
+
+
+    const limiteDisponivelPorCartao = React.useMemo(() => {
+        const mapa = new Map<string, number>()
+
+        for (const fatura of faturas) {
+            if (!fatura.cartao_id || fatura.pago) continue
+            const atual = mapa.get(fatura.cartao_id) || 0
+            mapa.set(fatura.cartao_id, atual + Number(fatura.valor || 0))
+        }
+
+        return mapa
+    }, [faturas])
 
     const inputCls = "w-full rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
 
@@ -132,8 +145,15 @@ export default function Cartoes({ db, toast }: CartoesProps) {
                             </div>
                             <div>
                                 <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{c.nome}</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Limite: {formatCurrency(Number(c.limite))}</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Limite total: {formatCurrency(Number(c.limite))}</p>
                             </div>
+                        </div>
+
+                        <div className="mb-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3">
+                            <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] mb-1">Limite disponível</p>
+                            <p className="text-base font-black text-emerald-700 dark:text-emerald-300">
+                                {formatCurrency(Math.max(0, Number(c.limite) - (limiteDisponivelPorCartao.get(c.id) || 0)))}
+                            </p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 mt-auto pt-6 border-t border-slate-100 dark:border-white/5">

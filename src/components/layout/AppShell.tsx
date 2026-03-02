@@ -4,15 +4,8 @@ import * as React from "react"
 import { Sidebar } from "./Sidebar"
 import { Menu, Plane } from "lucide-react"
 import { ToastProvider } from "../ui/Toast"
-import { Profile } from "@/src/types"
 
-export function AppShell({
-  children,
-  profile,
-}: {
-  children: React.ReactNode
-  profile: Profile | null
-}) {
+export function AppShell({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true)
 
   React.useEffect(() => {
@@ -31,7 +24,7 @@ export function AppShell({
   return (
     <ToastProvider>
       <div className="flex min-h-screen bg-slate-50 dark:bg-zinc-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-        <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} profile={profile} />
+        <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
         <div className={`flex flex-1 flex-col transition-all duration-300 ease-in-out ${isSidebarOpen ? 'lg:pl-72' : 'lg:pl-20'}`}>
           {/* Mobile Header */}
