@@ -249,13 +249,117 @@ export async function pagarParcelas(cartaoId: string, mesReferencia: string) {
 
 export async function registrarPrograma(name: string, currency_name?: string) {
   const { supabase, user } = await getUser()
-  const { data, error } = await supabase.from('programs').insert({
-    user_id: user.id,
-    name,
-    currency_name: currency_name || null
-  }).select().single()
-  if (error) throw new Error(error.message)
-  return data as Program
+
+  // 1) reutiliza o programa existente (global ou do usuário), quando houver
+  const { data: existing } = await supabase
+    .from('programs')
+    .select('*')
+    .eq('name', name)
+    .or(`user_id.is.null,user_id.eq.${user.id}`)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  let program = existing as Program | null
+
+  // 2) cria o programa caso não exista
+  if (!program) {
+    const { data, error } = await supabase
+      .from('programs')
+      .insert({
+        user_id: user.id,
+        name,
+        currency_name: currency_name || null,
+      })
+      .select()
+      .single()
+
+    if (error) throw new Error(error.message)
+    program = data as Program
+  }
+
+  // 3) garante a presença no saldo (evita programa "invisível" na aba Saldos)
+  const { error: balanceError } = await supabase.from('balances').upsert(
+    {
+      user_id: user.id,
+      program_id: program.id,
+      manual_adjustment: 0,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id,program_id' }
+  )
+
+  if (balanceError) throw new Error(balanceError.message)
+
+  revalidatePath('/saldos')
+  revalidatePath('/operacoes')
+  return program
+}
+
+export async function adicionarProgramaAoSaldo(programName: string) {
+  const { supabase, user } = await getUser()
+
+  const { data: existingProgram, error: existingProgramError } = await supabase
+    .from('programs')
+    .select('id, name, user_id')
+    .eq('name', programName)
+    .or(`user_id.is.null,user_id.eq.${user.id}`)
+    .order('user_id', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (existingProgramError) throw new Error(existingProgramError.message)
+
+  const program = existingProgram || await registrarPrograma(programName)
+
+  const { error: balanceError } = await supabase
+    .from('balances')
+    .upsert(
+      {
+        user_id: user.id,
+        program_id: program.id,
+        manual_adjustment: 0,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,program_id' }
+    )
+
+  if (balanceError) throw new Error(balanceError.message)
+
+  revalidatePath('/saldos')
+}
+
+export async function adicionarProgramaAoSaldo(programName: string) {
+  const { supabase, user } = await getUser()
+
+  const { data: existingProgram, error: existingProgramError } = await supabase
+    .from('programs')
+    .select('id, name, user_id')
+    .eq('name', programName)
+    .or(`user_id.is.null,user_id.eq.${user.id}`)
+    .order('user_id', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (existingProgramError) throw new Error(existingProgramError.message)
+
+  const program = existingProgram || await registrarPrograma(programName)
+
+  const { error: balanceError } = await supabase
+    .from('balances')
+    .upsert(
+      {
+        user_id: user.id,
+        program_id: program.id,
+        manual_adjustment: 0,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,program_id' }
+    )
+
+  if (balanceError) throw new Error(balanceError.message)
+
+  revalidatePath('/saldos')
 }
 
 export async function adicionarProgramaAoSaldo(programName: string) {
