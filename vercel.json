@@ -21,6 +21,8 @@
     {
       "source": "/api/:path((?!cron/).*)",
       "destination": "https://xoegapeodtbncirqvlmi.supabase.co/functions/v1/:path"
+    },
+    {
       "source": "/api/cron/update-prices",
       "destination": "/api/cron/update-prices"
     },
