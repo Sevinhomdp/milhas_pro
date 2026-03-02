@@ -15,7 +15,15 @@ export default function LoginPage() {
   const [error, setError] = React.useState<string | null>(null)
   const [successMsg, setSuccessMsg] = React.useState<string | null>(null)
   const router = useRouter()
-  const supabase = createClient()
+
+  const getSupabase = () => {
+    try {
+      return createClient()
+    } catch (err: any) {
+      setError(err?.message || 'Configuração do Supabase ausente.')
+      return null
+    }
+  }
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,6 +32,9 @@ export default function LoginPage() {
     setSuccessMsg(null)
 
     try {
+      const supabase = getSupabase()
+      if (!supabase) return
+
       if (isSignUp) {
         if (!nome) throw new Error('O nome é obrigatório para o cadastro.')
         const { data, error } = await supabase.auth.signUp({
@@ -65,6 +76,9 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     try {
+      const supabase = getSupabase()
+      if (!supabase) return
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

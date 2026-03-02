@@ -258,6 +258,39 @@ export async function registrarPrograma(name: string, currency_name?: string) {
   return data as Program
 }
 
+export async function adicionarProgramaAoSaldo(programName: string) {
+  const { supabase, user } = await getUser()
+
+  const { data: existingProgram, error: existingProgramError } = await supabase
+    .from('programs')
+    .select('id, name, user_id')
+    .eq('name', programName)
+    .or(`user_id.is.null,user_id.eq.${user.id}`)
+    .order('user_id', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (existingProgramError) throw new Error(existingProgramError.message)
+
+  const program = existingProgram || await registrarPrograma(programName)
+
+  const { error: balanceError } = await supabase
+    .from('balances')
+    .upsert(
+      {
+        user_id: user.id,
+        program_id: program.id,
+        manual_adjustment: 0,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,program_id' }
+    )
+
+  if (balanceError) throw new Error(balanceError.message)
+
+  revalidatePath('/saldos')
+}
+
 export async function ajustarSaldoManual(program_id: string, manual_adjustment: number) {
   const { supabase, user } = await getUser()
   const { error } = await supabase.from('balances').upsert({
