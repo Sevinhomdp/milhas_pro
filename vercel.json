@@ -1,26 +1,33 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/fetch-market-prices",
-      "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/update-prices",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/update-news",
-      "schedule": "0 9 * * * "
-    },
-    {
-      "path": "/api/cron/send-alerts",
-      "schedule": "0 */6 * * *"
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "https://xoegapeodtbncirqvlmi.supabase.co/functions/v1/$1"
-    }
-  ]
-}
+diff --git a/vercel.json b/vercel.json
+index be609f710b418cc42d83704aea153f49bd3b8ab0..2029dffc973ac61079261074ba049969097edd5a 100644
+--- a/vercel.json
++++ b/vercel.json
+@@ -1,26 +1,26 @@
+ {
+   "crons": [
+     {
+       "path": "/api/fetch-market-prices",
+       "schedule": "0 3 * * *"
+     },
+     {
+       "path": "/api/cron/update-prices",
+       "schedule": "0 8 * * *"
+     },
+     {
+       "path": "/api/cron/update-news",
+       "schedule": "0 9 * * *"
+     },
+     {
+       "path": "/api/cron/send-alerts",
+       "schedule": "0 */6 * * *"
+     }
+   ],
+   "rewrites": [
+     {
+-      "source": "/api/((?!cron/).*)",
+-      "destination": "https://xoegapeodtbncirqvlmi.supabase.co/functions/v1/:path*"
++      "source": "/api/:path((?!cron/).*)",
++      "destination": "https://xoegapeodtbncirqvlmi.supabase.co/functions/v1/:path"
+     }
+   ]
+ }
