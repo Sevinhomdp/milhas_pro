@@ -67,18 +67,6 @@ export default function Cartoes({ db, toast }: CartoesProps) {
     }
 
 
-    const limiteDisponivelPorCartao = React.useMemo(() => {
-        const mapa = new Map<string, number>()
-
-        for (const fatura of faturas) {
-            if (!fatura.cartao_id || fatura.pago) continue
-            const atual = mapa.get(fatura.cartao_id) || 0
-            mapa.set(fatura.cartao_id, atual + Number(fatura.valor || 0))
-        }
-
-        return mapa
-    }, [faturas])
-
     const inputCls = "w-full rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
 
     return (
@@ -152,7 +140,7 @@ export default function Cartoes({ db, toast }: CartoesProps) {
                         <div className="mb-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-3">
                             <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.2em] mb-1">Limite disponível</p>
                             <p className="text-base font-black text-emerald-700 dark:text-emerald-300">
-                                {formatCurrency(Math.max(0, Number(c.limite) - (limiteDisponivelPorCartao.get(c.id) || 0)))}
+                                {formatCurrency(Number(c.limite_disponivel ?? c.limite))}
                             </p>
                         </div>
 

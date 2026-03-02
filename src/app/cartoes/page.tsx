@@ -21,7 +21,17 @@ export default async function CartoesPage() {
   ])
 
   const db = {
-    cartoes: cartoes || [],
+    cartoes: (cartoes || []).map((cartao: any) => {
+      const totalEmAberto = (faturasAtivas || [])
+        .filter((fatura: any) => fatura.cartao_id === cartao.id && !fatura.pago)
+        .reduce((acc: number, fatura: any) => acc + Number(fatura.valor || 0), 0)
+
+      return {
+        ...cartao,
+        total_em_aberto: totalEmAberto,
+        limite_disponivel: Number(cartao.limite || 0) - totalEmAberto,
+      }
+    }),
     profile: null,
     programs: [],
     saldos: [],
@@ -35,4 +45,3 @@ export default async function CartoesPage() {
 
   return <CartoesRoute db={db as any} />
 }
-
