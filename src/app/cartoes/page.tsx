@@ -1,8 +1,8 @@
 diff --git a/src/app/cartoes/page.tsx b/src/app/cartoes/page.tsx
-index 0510e7431e046ca6eb4f848c68756ff350786d79..55efac2addc1d97de48e773139eacf93bc09f5cb 100644
+index 0510e7431e046ca6eb4f848c68756ff350786d79..e75da9b80c675633f085d5ec94ffe6fda830cf87 100644
 --- a/src/app/cartoes/page.tsx
 +++ b/src/app/cartoes/page.tsx
-@@ -1,38 +1,47 @@
+@@ -1,38 +1,49 @@
  import { createClient } from '@/src/lib/supabase/server'
  import { redirect } from 'next/navigation'
  import { CartoesRoute } from '@/src/components/routes/CartoesRoute'
@@ -25,19 +25,21 @@ index 0510e7431e046ca6eb4f848c68756ff350786d79..55efac2addc1d97de48e773139eacf93
        .eq('pago', false),
    ])
  
++  const cartoesComLimite = (cartoes || []).map((cartao) => {
++    const totalEmAberto = (faturasAtivas || [])
++      .filter((fatura) => fatura.cartao_id === cartao.id)
++      .reduce((acc, fatura) => acc + Number(fatura.valor || 0), 0)
++
++    return {
++      ...cartao,
++      total_em_aberto: totalEmAberto,
++      limite_disponivel: Number(cartao.limite || 0) - totalEmAberto,
++    }
++  })
++
    const db = {
 -    cartoes: cartoes || [],
-+    cartoes: (cartoes || []).map((cartao: any) => {
-+      const totalEmAberto = (faturasAtivas || [])
-+        .filter((fatura: any) => fatura.cartao_id === cartao.id && !fatura.pago)
-+        .reduce((acc: number, fatura: any) => acc + Number(fatura.valor || 0), 0)
-+
-+      return {
-+        ...cartao,
-+        total_em_aberto: totalEmAberto,
-+        limite_disponivel: Number(cartao.limite || 0) - totalEmAberto,
-+      }
-+    }),
++    cartoes: cartoesComLimite,
      profile: null,
      programs: [],
      saldos: [],

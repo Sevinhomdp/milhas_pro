@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Database } from '@/src/types'
-import { alterarSenha } from '@/src/app/actions'
+import { alterarSenha, atualizarNomeUsuario } from '@/src/app/actions'
 import { Moon, Sun, Key, Settings, User } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { PROGS } from '@/src/constants'
@@ -15,9 +15,10 @@ interface ConfiguracoesProps {
     theme: 'light' | 'dark'
     toggleTheme: () => void
     userEmail?: string
+    userName?: string
 }
 
-export default function Configuracoes({ db, toast, theme, toggleTheme, userEmail }: ConfiguracoesProps) {
+export default function Configuracoes({ db, toast, theme, toggleTheme, userEmail, userName }: ConfiguracoesProps) {
     const [progsAtivos, setProgsAtivos] = React.useState<string[]>(() => {
         if (typeof window === 'undefined') return PROGS
         const s = localStorage.getItem('progsAtivos'); return s ? JSON.parse(s) : PROGS
@@ -34,6 +35,21 @@ export default function Configuracoes({ db, toast, theme, toggleTheme, userEmail
     const [senha, setSenha] = React.useState('')
     const [senhaConf, setSenhaConf] = React.useState('')
     const [ldPwd, setLdPwd] = React.useState(false)
+    const [nomeUsuario, setNomeUsuario] = React.useState(userName || '')
+    const [ldNome, setLdNome] = React.useState(false)
+
+    const handleNome = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLdNome(true)
+        try {
+            await atualizarNomeUsuario(nomeUsuario)
+            toast('Nome atualizado com sucesso!', 'success')
+        } catch (err: any) {
+            toast(err.message, 'error')
+        } finally {
+            setLdNome(false)
+        }
+    }
 
     const handleSenha = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -81,6 +97,22 @@ export default function Configuracoes({ db, toast, theme, toggleTheme, userEmail
                                 <p className="text-base font-black text-slate-900 dark:text-white">{userEmail || 'Não identificado'}</p>
                             </div>
                         </div>
+
+                        <form onSubmit={handleNome} className="mt-6 space-y-3">
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Nome de usuário</label>
+                                <input
+                                    type="text"
+                                    value={nomeUsuario}
+                                    onChange={e => setNomeUsuario(e.target.value)}
+                                    className={iCls}
+                                    placeholder="Seu nome"
+                                />
+                            </div>
+                            <Button loading={ldNome} disabled={!nomeUsuario.trim()} type="submit" className="h-10 px-5 text-[10px] uppercase font-black tracking-widest">
+                                Salvar Nome
+                            </Button>
+                        </form>
                     </div>
 
                     {/* Aparência */}

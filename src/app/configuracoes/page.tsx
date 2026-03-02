@@ -7,6 +7,12 @@ export default async function ConfiguracoesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user.id)
+    .maybeSingle()
+
   const db = {
     profile: null,
     programs: [],
@@ -20,5 +26,5 @@ export default async function ConfiguracoesPage() {
     user_alerts: []
   }
 
-  return <ConfiguracoesRoute db={db as any} userEmail={user.email} />
+  return <ConfiguracoesRoute db={db as any} userEmail={user.email} userName={profile?.full_name || ''} />
 }

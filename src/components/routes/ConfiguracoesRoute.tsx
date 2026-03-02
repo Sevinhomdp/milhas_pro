@@ -4,7 +4,7 @@ import { useTheme } from '@/src/components/providers/ThemeProvider'
 import ConfiguracoesFeature from '@/src/components/features/Configuracoes'
 import { Database } from '@/src/types'
 
-export function ConfiguracoesRoute({ db, userEmail }: { db: Database; userEmail?: string }) {
+export function ConfiguracoesRoute({ db, userEmail, userName }: { db: Database; userEmail?: string; userName?: string }) {
   const toast = useRouteToast()
   const { resolvedTheme, setTheme } = useTheme()
 
@@ -17,6 +17,7 @@ export function ConfiguracoesRoute({ db, userEmail }: { db: Database; userEmail?
       theme={theme}
       toggleTheme={toggleTheme}
       userEmail={userEmail}
+      userName={userName}
     />
   )
 }

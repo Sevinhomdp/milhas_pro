@@ -369,6 +369,26 @@ export async function alterarSenha(novaSenha: string) {
   if (error) throw new Error(error.message)
 }
 
+export async function atualizarNomeUsuario(nome: string) {
+  const { supabase, user } = await getUser()
+  const nomeNormalizado = nome.trim()
+
+  if (!nomeNormalizado) {
+    throw new Error('Informe um nome válido.')
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({
+      id: user.id,
+      full_name: nomeNormalizado,
+    }, { onConflict: 'id' })
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/configuracoes')
+}
+
 export async function getMarketPrices() {
   const { supabase } = await getUser()
   const { data } = await supabase.from('market_prices').select('*').order('timestamp', { ascending: false }).limit(50)

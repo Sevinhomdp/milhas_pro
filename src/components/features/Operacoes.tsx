@@ -2,12 +2,13 @@
 
 import * as React from 'react'
 import { Operation, Cartao, Program, Database } from '@/src/types'
-import { executarCompra, executarVenda, executarTransf, excluirOperacao, marcarRecebido } from '@/src/app/actions'
+import { executarCompra, executarVenda, executarTransf, excluirOperacao, marcarRecebido, registrarPrograma } from '@/src/app/actions'
 import { Badge } from '../ui/Badge'
 import { Button } from '../ui/Button'
 import { PlusCircle, Download, Check, Trash2, Info, ArrowRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn, formatCurrency, formatNumber } from '@/src/lib/utils'
+import { PROGS } from '@/src/constants'
 
 interface OperacoesProps {
     db: Database
@@ -20,25 +21,42 @@ type Score = { label: string; color: 'green' | 'yellow' | 'red' } | null
 
 export default function Operacoes({ db, toast }: OperacoesProps) {
     const { operacoes, cartoes, programs } = db
+    const programasBase = programs.length > 0
+        ? programs
+        : PROGS.map((name, i) => ({
+            id: `virtual-${i}-${name}`,
+            name,
+            currency_name: null,
+            user_id: null,
+            created_at: new Date(0).toISOString(),
+        }))
 
     // M-08 FIX: Respeitar a seleção de "Programas Ativos" feita em Configurações.
     // Lê a lista do localStorage (mesma chave usada por Configuracoes.tsx).
     // Se não houver preferência salva, exibe todos os programas.
-    const [programasFiltrados, setProgramasFiltrados] = React.useState<typeof programs>(programs)
+    const [programasFiltrados, setProgramasFiltrados] = React.useState<typeof programasBase>(programasBase)
     React.useEffect(() => {
         try {
             const saved = localStorage.getItem('progsAtivos')
             if (saved) {
                 const ativos: string[] = JSON.parse(saved)
-                const filtrados = programs.filter(p => ativos.includes(p.name))
-                setProgramasFiltrados(filtrados.length > 0 ? filtrados : programs)
+                const filtrados = programasBase.filter(p => ativos.includes(p.name))
+                setProgramasFiltrados(filtrados.length > 0 ? filtrados : programasBase)
             } else {
-                setProgramasFiltrados(programs)
+                setProgramasFiltrados(programasBase)
             }
         } catch {
-            setProgramasFiltrados(programs)
+            setProgramasFiltrados(programasBase)
         }
-    }, [programs])
+    }, [programasBase])
+
+    const resolveProgramId = async (programId: string) => {
+        if (!programId.startsWith('virtual-')) return programId
+        const selected = programasFiltrados.find((p) => p.id === programId)
+        if (!selected) throw new Error('Programa selecionado inválido.')
+        const programa = await registrarPrograma(selected.name)
+        return programa.id
+    }
 
     const [tipo, setTipo] = React.useState<TipoOp>('compra')
     const [loading, setLoading] = React.useState(false)
@@ -121,8 +139,9 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
             // ─────────────────────────────────────────────────────────────
 
             if (tipo === 'compra') {
+                const programId = await resolveProgramId(gf('program_id'))
                 await executarCompra({
-                    program_id: gf('program_id'),
+                    program_id: programId,
                     quantity: parseFloat(qtd) || 0,
                     value: parseFloat(valor) || 0,
                     fees: parseFloat(taxas) || 0,
@@ -131,8 +150,9 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
                     date: gf('date')
                 })
             } else if (tipo === 'venda') {
+                const programId = await resolveProgramId(gf('program_id'))
                 await executarVenda({
-                    program_id: gf('program_id'),
+                    program_id: programId,
                     quantity: parseFloat(qtd) || 0,
                     value: parseFloat(valor) || 0,
                     fees: parseFloat(taxas) || 0,
@@ -141,9 +161,11 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
                     data_recebimento: gf('data_recebimento') || undefined
                 })
             } else {
+                const origemId = await resolveProgramId(gf('program_id_origem'))
+                const destinoId = await resolveProgramId(gf('program_id_destino'))
                 await executarTransf({
-                    program_id_origem: gf('program_id_origem'),
-                    program_id_destino: gf('program_id_destino'),
+                    program_id_origem: origemId,
+                    program_id_destino: destinoId,
                     quantity: parseFloat(qtd) || 0,
                     bonus: parseFloat(bonus) || 0,
                     taxa: parseFloat(taxas) || 0,
