@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { Database, ProgramaSaldo } from '@/src/types'
-import { PROGS } from '@/src/constants'
 import { formatNumber, formatCurrency, cn } from '@/src/lib/utils'
 import { adicionarProgramaAoSaldo, ajustarSaldoManual } from '@/src/app/actions'
 import { Plus, Check, X, Search, ChevronDown, TrendingUp } from 'lucide-react'
@@ -97,8 +96,11 @@ export default function Saldos({ db, toast }: SaldosProps) {
     const [editValues, setEditValues] = useState<Record<string, string>>({})
     const [savingProg, setSavingProg] = useState<string | null>(null)
 
-    const programasCadastrados = db.saldos.map(s => s.nome_programa)
-    const programasDisponiveis = PROGS.filter(p => !programasCadastrados.includes(p))
+    const programasCadastrados = new Set(db.saldos.map(s => s.nome_programa))
+    const programasDisponiveis = db.programs
+        .map(programa => programa.name)
+        .filter((nomePrograma, idx, arr) => arr.indexOf(nomePrograma) === idx)
+        .filter(nomePrograma => !programasCadastrados.has(nomePrograma))
 
     const handleAddPrograma = async () => {
         if (!selectedProg) return
