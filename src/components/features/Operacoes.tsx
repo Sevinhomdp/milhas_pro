@@ -71,6 +71,17 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
     const sf = (k: string, v: string) => setFdState(p => ({ ...p, [k]: v }))
 
     React.useEffect(() => {
+        if (programasFiltrados.length === 0) return
+
+        setFdState(prev => ({
+            ...prev,
+            program_id: prev.program_id || programasFiltrados[0]?.id || '',
+            program_id_origem: prev.program_id_origem || programasFiltrados[0]?.id || '',
+            program_id_destino: prev.program_id_destino || programasFiltrados[1]?.id || programasFiltrados[0]?.id || '',
+        }))
+    }, [programasFiltrados])
+
+    React.useEffect(() => {
         const q = parseFloat(qtd) || 0, v = parseFloat(valor) || 0, t = parseFloat(taxas) || 0
         if (!q || (!v && tipo !== 'transferencia')) { setScore(null); return }
 
