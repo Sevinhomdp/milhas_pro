@@ -15,7 +15,7 @@ interface CartoesProps {
 }
 
 export default function Cartoes({ db, toast }: CartoesProps) {
-    const { cartoes } = db
+    const { cartoes, faturas } = db
     const [showForm, setShowForm] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     const [nome, setNome] = React.useState('')
@@ -26,6 +26,14 @@ export default function Cartoes({ db, toast }: CartoesProps) {
     const [loadDolar, setLoadDolar] = React.useState(false)
     const [valorGasto, setValorGasto] = React.useState('5000')
     const [ptsPorDolar, setPtsPorDolar] = React.useState('2.5')
+
+    const gastosAtivosPorCartao = React.useMemo(() => {
+        return faturas.reduce<Record<string, number>>((acc, fatura) => {
+            acc[fatura.cartao_id] = (acc[fatura.cartao_id] || 0) + Number(fatura.valor || 0)
+            return acc
+        }, {})
+    }, [faturas])
+
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault(); setLoading(true)
@@ -132,7 +140,12 @@ export default function Cartoes({ db, toast }: CartoesProps) {
                             </div>
                             <div>
                                 <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{c.nome}</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Limite: {formatCurrency(Number(c.limite))}</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                    Limite total: {formatCurrency(Number(c.limite))}
+                                </p>
+                                <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mt-1">
+                                    Disponível: {formatCurrency(Math.max(0, Number(c.limite) - (gastosAtivosPorCartao[c.id] || 0)))}
+                                </p>
                             </div>
                         </div>
 

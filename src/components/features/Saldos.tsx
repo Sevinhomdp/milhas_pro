@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Database, ProgramaSaldo } from '@/src/types'
 import { PROGS } from '@/src/constants'
 import { formatNumber, formatCurrency, cn } from '@/src/lib/utils'
-import { ajustarSaldoManual, registrarPrograma } from '@/src/app/actions'
+import { ajustarSaldoManual } from '@/src/app/actions'
 import { Plus, Check, X, Search, ChevronDown, TrendingUp } from 'lucide-react'
 
 interface SaldosProps {
@@ -92,21 +92,26 @@ function ProgramaCombobox({
 // ── Componente principal ─────────────────────────────────────
 export default function Saldos({ db, toast }: SaldosProps) {
     const [showCombobox, setShowCombobox] = useState(false)
-    const [selectedProg, setSelectedProg] = useState('')
+    const [selectedProgId, setSelectedProgId] = useState('')
     const [addLoading, setAddLoading] = useState(false)
     const [editValues, setEditValues] = useState<Record<string, string>>({})
     const [savingProg, setSavingProg] = useState<string | null>(null)
 
-    const programasCadastrados = db.saldos.map(s => s.nome_programa)
-    const programasDisponiveis = PROGS.filter(p => !programasCadastrados.includes(p))
+    const programasCadastrados = new Set(db.saldos.map((s) => s.program_id))
+    const programasDisponiveis: Array<{ id: string; name: string }> = (db.programs.length > 0
+        ? db.programs.map((p) => ({ id: p.id, name: p.name }))
+        : PROGS.map((name) => ({ id: name, name })))
+        .filter((p) => !programasCadastrados.has(p.id))
+
+    const selectedPrograma = programasDisponiveis.find((p) => p.id === selectedProgId)
 
     const handleAddPrograma = async () => {
-        if (!selectedProg) return
+        if (!selectedProgId) return
         setAddLoading(true)
         try {
-            await registrarPrograma(selectedProg)
-            toast(`Programa ${selectedProg} adicionado!`, 'success')
-            setSelectedProg('')
+            await ajustarSaldoManual(selectedProgId, 0)
+            toast(`Programa ${selectedPrograma?.name ?? 'selecionado'} adicionado!`, 'success')
+            setSelectedProgId('')
         } catch (e: any) {
             toast(e.message, 'error')
         } finally {
@@ -145,7 +150,7 @@ export default function Saldos({ db, toast }: SaldosProps) {
                     <p className="text-sm text-gray-400 mt-2">Veja seus pontos acumulados e ajuste saldos manualmente se necessário.</p>
                 </div>
 
-                {!selectedProg && (
+                {!selectedProgId && (
                     <div className="relative">
                         <button
                             onClick={() => setShowCombobox(!showCombobox)}
@@ -158,9 +163,12 @@ export default function Saldos({ db, toast }: SaldosProps) {
 
                         {showCombobox && (
                             <ProgramaCombobox
-                                options={programasDisponiveis}
-                                value={selectedProg}
-                                onChange={setSelectedProg}
+                                options={programasDisponiveis.map((p) => p.name)}
+                                value={programasDisponiveis.find((p) => p.id === selectedProgId)?.name ?? ''}
+                                onChange={(name) => {
+                                    const programa = programasDisponiveis.find((p) => p.name === name)
+                                    if (programa) setSelectedProgId(programa.id)
+                                }}
                                 onClose={() => setShowCombobox(false)}
                             />
                         )}
@@ -169,10 +177,10 @@ export default function Saldos({ db, toast }: SaldosProps) {
             </div>
 
             {/* Confirmação após seleção no combobox */}
-            {selectedProg && !showCombobox && (
+            {selectedPrograma && !showCombobox && (
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl px-4 py-3 flex items-center justify-between gap-4 animate-fadeIn">
                     <p className="text-sm font-bold text-amber-700 dark:text-amber-300">
-                        Adicionar <span className="text-amber-500">{selectedProg}</span> ao portfólio?
+                        Adicionar <span className="text-amber-500">{selectedPrograma.name}</span> ao portfólio?
                     </p>
                     <div className="flex items-center gap-2 shrink-0">
                         <button
@@ -183,7 +191,7 @@ export default function Saldos({ db, toast }: SaldosProps) {
                             <Check size={12} />
                             {addLoading ? 'Adicionando...' : 'Confirmar'}
                         </button>
-                        <button onClick={() => setSelectedProg('')} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        <button onClick={() => setSelectedProgId('')} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                             <X size={15} />
                         </button>
                     </div>

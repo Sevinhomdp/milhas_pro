@@ -67,6 +67,8 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
         observacao: ''
     })
 
+    const hasPrograms = programasFiltrados.length > 0
+
     const gf = (k: string) => fd[k] ?? ''
     const sf = (k: string, v: string) => setFdState(p => ({ ...p, [k]: v }))
 
@@ -87,6 +89,13 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault(); setLoading(true); setError(null)
+
+        if (!hasPrograms) {
+            setLoading(false)
+            toast('Cadastre ou adicione ao menos um programa na aba Saldos para lançar operações.', 'warning')
+            return
+        }
+
         try {
             // ── Validações de entrada ─────────────────────────────────────
             const qtdNum = parseFloat(qtd) || 0
@@ -281,7 +290,13 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
                                 </div>
                             )}
 
-                            <Button type="submit" loading={loading} className="w-full h-12" icon={<PlusCircle className="w-5 h-5" />}>Registrar Operação</Button>
+                            {!hasPrograms && (
+                                <div className="p-4 rounded-2xl border bg-red-500/5 border-red-500/20 text-red-500 text-[11px] font-bold">
+                                    Nenhum programa disponível para lançamento. Vá em Saldos e adicione um programa primeiro.
+                                </div>
+                            )}
+
+                            <Button type="submit" loading={loading} disabled={!hasPrograms} className="w-full h-12" icon={<PlusCircle className="w-5 h-5" />}>Registrar Operação</Button>
                         </form>
                     </div>
                 </div>
