@@ -13,13 +13,24 @@ export default async function InteligenciaPage() {
     { data: marketPrices },
     { data: marketNews },
     { data: userAlerts },
-    { data: alertasConfig },
   ] = await Promise.all([
-    supabase.from('balances').select('*, programs(*)').eq('user_id', user.id),
-    supabase.from('market_prices').select('*').order('timestamp', { ascending: true }),
-    supabase.from('market_news').select('*').order('published_at', { ascending: false }),
-    supabase.from('user_alerts').select('*').eq('user_id', user.id),
-    supabase.from('alertas_config').select('*').eq('user_id', user.id),
+    supabase
+      .from('balances')
+      .select('*, programs(*)')
+      .eq('user_id', user.id),
+    supabase
+      .from('market_prices')
+      .select('*')
+      .order('timestamp', { ascending: true }),
+    supabase
+      .from('market_news')
+      .select('*')
+      .eq('ativa', true)
+      .order('data_publicacao', { ascending: false }),
+    supabase
+      .from('user_alerts')
+      .select('*')
+      .eq('user_id', user.id),
   ])
 
   const formattedSaldos = (saldos || []).map((s: any) => ({
@@ -44,5 +55,9 @@ export default async function InteligenciaPage() {
     user_alerts: userAlerts || [],
   }
 
-  return <div className="p-4 md:p-8"><InteligenciaRoute db={db as Database} userEmail={user.email} alertasConfig={alertasConfig || []} /></div>
+  return (
+    <div className="p-4 md:p-8">
+      <InteligenciaRoute db={db as Database} />
+    </div>
+  )
 }
