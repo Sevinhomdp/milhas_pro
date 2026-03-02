@@ -1,4 +1,4 @@
-import { createClient } from '@/src/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { SaldosRoute } from '@/src/components/routes/SaldosRoute'
 
