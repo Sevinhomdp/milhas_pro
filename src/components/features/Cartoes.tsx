@@ -1,8 +1,8 @@
 diff --git a/src/components/features/Cartoes.tsx b/src/components/features/Cartoes.tsx
-index 792dcaf23b58d8ec7d0a16b58fd663856223c446..3797a40fd5399d3f4a29caa4b12555878124c852 100644
+index 792dcaf23b58d8ec7d0a16b58fd663856223c446..e34ba22702936447eb0a4561a2b141a1f7bbbf15 100644
 --- a/src/components/features/Cartoes.tsx
 +++ b/src/components/features/Cartoes.tsx
-@@ -1,93 +1,103 @@
+@@ -1,54 +1,62 @@
  'use client'
  
  import * as React from 'react'
@@ -33,6 +33,14 @@ index 792dcaf23b58d8ec7d0a16b58fd663856223c446..3797a40fd5399d3f4a29caa4b1255587
      const [valorGasto, setValorGasto] = React.useState('5000')
      const [ptsPorDolar, setPtsPorDolar] = React.useState('2.5')
  
++    const gastosAtivosPorCartao = React.useMemo(() => {
++        return faturas.reduce<Record<string, number>>((acc, fatura) => {
++            acc[fatura.cartao_id] = (acc[fatura.cartao_id] || 0) + Number(fatura.valor || 0)
++            return acc
++        }, {})
++    }, [faturas])
++
++
      const handleAdd = async (e: React.FormEvent) => {
          e.preventDefault(); setLoading(true)
          try {
@@ -58,56 +66,7 @@ index 792dcaf23b58d8ec7d0a16b58fd663856223c446..3797a40fd5399d3f4a29caa4b1255587
              toast(e.message, 'error')
          }
      }
- 
-     const fetchDolar = async () => {
-         setLoadDolar(true)
-         try {
-             const r = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL')
-             const d = await r.json()
-             setDolar(parseFloat(d.USDBRL.ask))
-         } catch {
-             setDolar(null)
-         } finally {
-             setLoadDolar(false)
-         }
-     }
- 
-+
-+    const limiteUtilizadoPorCartao = React.useMemo(() => {
-+        return faturas.reduce<Record<string, number>>((acc, fatura) => {
-+            if (!fatura.pago) {
-+                acc[fatura.cartao_id] = (acc[fatura.cartao_id] || 0) + Number(fatura.valor || 0)
-+            }
-+            return acc
-+        }, {})
-+    }, [faturas])
-+
-     const inputCls = "w-full rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
- 
-     return (
-         <div className="space-y-6">
-             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-                 <div>
-                     <p className="block text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500 mb-1.5">Gestão Financeira</p>
-                     <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-2 leading-none">
-                         Cartões
-                     </h1>
-                 </div>
-                 <Button
-                     variant={showForm ? 'secondary' : 'primary'}
-                     onClick={() => setShowForm(!showForm)}
-                     icon={<Plus className="w-4 h-4" />}
-                 >
-                     {showForm ? 'Cancelar' : 'Novo Cartão'}
-                 </Button>
-             </div>
- 
-             {showForm && (
-                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 p-6 rounded-3xl shadow-sm animate-fadeIn">
-                     <h2 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-widest">Adicionar Cartão</h2>
-                     <form onSubmit={handleAdd}>
-                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-@@ -110,51 +120,53 @@ export default function Cartoes({ db, toast }: CartoesProps) {
+@@ -110,51 +118,56 @@ export default function Cartoes({ db, toast }: CartoesProps) {
                          </div>
                          <div className="mt-6">
                              <Button loading={loading} type="submit" size="lg" className="px-8">
@@ -134,9 +93,12 @@ index 792dcaf23b58d8ec7d0a16b58fd663856223c446..3797a40fd5399d3f4a29caa4b1255587
                              <div>
                                  <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{c.nome}</h3>
 -                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Limite: {formatCurrency(Number(c.limite))}</p>
-+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Limite total: {formatCurrency(Number(c.limite))}</p>
-+                                <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mt-1">Disponível: {formatCurrency(Math.max(Number(c.limite) - (limiteUtilizadoPorCartao[c.id] || 0), 0))}</p>
-+                                <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mt-1">Em aberto: {formatCurrency(limiteUtilizadoPorCartao[c.id] || 0)}</p>
++                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
++                                    Limite total: {formatCurrency(Number(c.limite))}
++                                </p>
++                                <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mt-1">
++                                    Disponível: {formatCurrency(Math.max(0, Number(c.limite) - (gastosAtivosPorCartao[c.id] || 0)))}
++                                </p>
                              </div>
                          </div>
  
