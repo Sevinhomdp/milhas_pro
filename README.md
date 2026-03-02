@@ -36,3 +36,15 @@ Para evitar acoplamento entre Server Components e componentes de UI interativos,
 4. `page.tsx` não deve conter callbacks placeholder (ex.: `toast={() => {}}`, `toggleTheme={() => {}}`).
 
 Esse padrão mantém separação clara entre camada de dados (server) e camada interativa (client).
+
+## Variáveis para Vercel (Inteligência)
+- `CRON_SECRET`
+- `GEMINI_API_KEY`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `SUPABASE_SERVICE_ROLE_KEY` (Settings → API → service_role; manter somente no server)
+
+
+## Migration de Inteligência
+- Execute manualmente o conteúdo de `supabase/migrations/20260302183000_inteligencia.sql` no Supabase SQL Editor.
+- Use `node scripts/check-migration.mjs` para ver instruções e validar o arquivo local antes de aplicar.
