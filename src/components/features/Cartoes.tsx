@@ -15,7 +15,7 @@ interface CartoesProps {
 }
 
 export default function Cartoes({ db, toast }: CartoesProps) {
-    const { cartoes } = db
+    const { cartoes, faturas } = db
     const [showForm, setShowForm] = React.useState(false)
     const [loading, setLoading] = React.useState(false)
     const [nome, setNome] = React.useState('')
@@ -65,6 +65,16 @@ export default function Cartoes({ db, toast }: CartoesProps) {
             setLoadDolar(false)
         }
     }
+
+
+    const limiteUtilizadoPorCartao = React.useMemo(() => {
+        return faturas.reduce<Record<string, number>>((acc, fatura) => {
+            if (!fatura.pago) {
+                acc[fatura.cartao_id] = (acc[fatura.cartao_id] || 0) + Number(fatura.valor || 0)
+            }
+            return acc
+        }, {})
+    }, [faturas])
 
     const inputCls = "w-full rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
 
@@ -132,7 +142,9 @@ export default function Cartoes({ db, toast }: CartoesProps) {
                             </div>
                             <div>
                                 <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{c.nome}</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Limite: {formatCurrency(Number(c.limite))}</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Limite total: {formatCurrency(Number(c.limite))}</p>
+                                <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mt-1">Disponível: {formatCurrency(Math.max(Number(c.limite) - (limiteUtilizadoPorCartao[c.id] || 0), 0))}</p>
+                                <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mt-1">Em aberto: {formatCurrency(limiteUtilizadoPorCartao[c.id] || 0)}</p>
                             </div>
                         </div>
 

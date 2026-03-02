@@ -21,24 +21,6 @@ type Score = { label: string; color: 'green' | 'yellow' | 'red' } | null
 export default function Operacoes({ db, toast }: OperacoesProps) {
     const { operacoes, cartoes, programs } = db
 
-    // M-08 FIX: Respeitar a seleção de "Programas Ativos" feita em Configurações.
-    // Lê a lista do localStorage (mesma chave usada por Configuracoes.tsx).
-    // Se não houver preferência salva, exibe todos os programas.
-    const [programasFiltrados, setProgramasFiltrados] = React.useState<typeof programs>(programs)
-    React.useEffect(() => {
-        try {
-            const saved = localStorage.getItem('progsAtivos')
-            if (saved) {
-                const ativos: string[] = JSON.parse(saved)
-                const filtrados = programs.filter(p => ativos.includes(p.name))
-                setProgramasFiltrados(filtrados.length > 0 ? filtrados : programs)
-            } else {
-                setProgramasFiltrados(programs)
-            }
-        } catch {
-            setProgramasFiltrados(programs)
-        }
-    }, [programs])
 
     const [tipo, setTipo] = React.useState<TipoOp>('compra')
     const [loading, setLoading] = React.useState(false)
@@ -56,9 +38,9 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
     const today = new Date().toISOString().split('T')[0]
 
     const [fd, setFdState] = React.useState<Record<string, string>>({
-        program_id: programasFiltrados[0]?.id || '',
-        program_id_origem: programasFiltrados[0]?.id || '',
-        program_id_destino: programasFiltrados[1]?.id || '',
+        program_id: programs[0]?.id || '',
+        program_id_origem: programs[0]?.id || '',
+        program_id_destino: programs[1]?.id || '',
         cartao_id: '',
         parcelas: '1',
         date: today,
@@ -201,7 +183,7 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
                                     <div>
                                         <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Programa</label>
                                         <select value={gf('program_id')} onChange={e => sf('program_id', e.target.value)} className={inputCls} required>
-                                            {programasFiltrados.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                            {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                         </select>
                                     </div>
                                 ) : (
@@ -209,13 +191,13 @@ export default function Operacoes({ db, toast }: OperacoesProps) {
                                         <div>
                                             <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Origem</label>
                                             <select value={gf('program_id_origem')} onChange={e => sf('program_id_origem', e.target.value)} className={inputCls} required>
-                                                {programasFiltrados.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                             </select>
                                         </div>
                                         <div>
                                             <label className="block text-[10px] font-bold uppercase text-gray-400 mb-1.5 ml-1">Destino</label>
                                             <select value={gf('program_id_destino')} onChange={e => sf('program_id_destino', e.target.value)} className={inputCls} required>
-                                                {programasFiltrados.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                {programs.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                             </select>
                                         </div>
                                     </div>

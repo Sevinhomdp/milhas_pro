@@ -4,7 +4,9 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Database, ProgramaSaldo } from '@/src/types'
 import { PROGS } from '@/src/constants'
 import { formatNumber, formatCurrency, cn } from '@/src/lib/utils'
-import { ajustarSaldoManual, registrarPrograma } from '@/src/app/actions'
+import { ajustarSaldoManual } from '@/src/app/actions'
+import { createClient } from '@/src/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 import { Plus, Check, X, Search, ChevronDown, TrendingUp } from 'lucide-react'
 
 interface SaldosProps {
@@ -96,19 +98,39 @@ export default function Saldos({ db, toast }: SaldosProps) {
     const [addLoading, setAddLoading] = useState(false)
     const [editValues, setEditValues] = useState<Record<string, string>>({})
     const [savingProg, setSavingProg] = useState<string | null>(null)
+    const supabase = createClient()
+    const router = useRouter()
 
     const programasCadastrados = db.saldos.map(s => s.nome_programa)
-    const programasDisponiveis = PROGS.filter(p => !programasCadastrados.includes(p))
+    const programasBase = Array.from(new Set([...PROGS, ...db.programs.map(p => p.name)])).sort((a, b) => a.localeCompare(b))
+    const programasDisponiveis = programasBase.filter(p => !programasCadastrados.includes(p))
 
     const handleAddPrograma = async () => {
         if (!selectedProg) return
         setAddLoading(true)
         try {
-            await registrarPrograma(selectedProg)
+            const { data: authData, error: authError } = await supabase.auth.getUser()
+            if (authError || !authData.user) {
+                throw new Error('Sessão inválida. Faça login novamente.')
+            }
+
+            const { error } = await supabase
+                .from('programs')
+                .insert({
+                    user_id: authData.user.id,
+                    name: selectedProg,
+                    currency_name: null,
+                })
+
+            if (error) {
+                throw error
+            }
+
             toast(`Programa ${selectedProg} adicionado!`, 'success')
             setSelectedProg('')
+            router.refresh()
         } catch (e: any) {
-            toast(e.message, 'error')
+            toast(e.message ?? 'Erro ao adicionar programa.', 'error')
         } finally {
             setAddLoading(false)
         }
