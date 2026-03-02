@@ -1,8 +1,8 @@
 diff --git a/src/components/features/Cartoes.tsx b/src/components/features/Cartoes.tsx
-index 792dcaf23b58d8ec7d0a16b58fd663856223c446..bf95fe9abfd0e16e14bd8796da90d73063caf577 100644
+index 792dcaf23b58d8ec7d0a16b58fd663856223c446..3797a40fd5399d3f4a29caa4b12555878124c852 100644
 --- a/src/components/features/Cartoes.tsx
 +++ b/src/components/features/Cartoes.tsx
-@@ -1,93 +1,112 @@
+@@ -1,93 +1,103 @@
  'use client'
  
  import * as React from 'react'
@@ -73,23 +73,14 @@ index 792dcaf23b58d8ec7d0a16b58fd663856223c446..bf95fe9abfd0e16e14bd8796da90d730
      }
  
 +
-+    const limitePorCartao = React.useMemo(() => {
-+        const totalAtivo = faturas
-+            .filter(f => !f.pago)
-+            .reduce<Record<string, number>>((acc, f) => {
-+                acc[f.cartao_id] = (acc[f.cartao_id] || 0) + Number(f.valor || 0)
-+                return acc
-+            }, {})
-+
-+        return cartoes.reduce<Record<string, { limiteTotal: number; despesasAtivas: number; limiteDisponivel: number; utilizacaoPct: number }>>((acc, c) => {
-+            const limiteTotal = Number(c.limite) || 0
-+            const despesasAtivas = totalAtivo[c.id] || 0
-+            const limiteDisponivel = Math.max(0, limiteTotal - despesasAtivas)
-+            const utilizacaoPct = limiteTotal > 0 ? Math.min(100, (despesasAtivas / limiteTotal) * 100) : 0
-+            acc[c.id] = { limiteTotal, despesasAtivas, limiteDisponivel, utilizacaoPct }
++    const limiteUtilizadoPorCartao = React.useMemo(() => {
++        return faturas.reduce<Record<string, number>>((acc, fatura) => {
++            if (!fatura.pago) {
++                acc[fatura.cartao_id] = (acc[fatura.cartao_id] || 0) + Number(fatura.valor || 0)
++            }
 +            return acc
 +        }, {})
-+    }, [cartoes, faturas])
++    }, [faturas])
 +
      const inputCls = "w-full rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
  
@@ -116,7 +107,7 @@ index 792dcaf23b58d8ec7d0a16b58fd663856223c446..bf95fe9abfd0e16e14bd8796da90d730
                      <h2 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-widest">Adicionar Cartão</h2>
                      <form onSubmit={handleAdd}>
                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-@@ -110,51 +129,70 @@ export default function Cartoes({ db, toast }: CartoesProps) {
+@@ -110,51 +120,53 @@ export default function Cartoes({ db, toast }: CartoesProps) {
                          </div>
                          <div className="mt-6">
                              <Button loading={loading} type="submit" size="lg" className="px-8">
@@ -143,26 +134,9 @@ index 792dcaf23b58d8ec7d0a16b58fd663856223c446..bf95fe9abfd0e16e14bd8796da90d730
                              <div>
                                  <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight">{c.nome}</h3>
 -                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Limite: {formatCurrency(Number(c.limite))}</p>
-+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-+                                    Limite total: {formatCurrency(limitePorCartao[c.id]?.limiteTotal || 0)}
-+                                </p>
-+                            </div>
-+                        </div>
-+
-+
-+                        <div className="mb-4 rounded-2xl bg-slate-50 dark:bg-white/5 p-3 border border-slate-200 dark:border-white/10">
-+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Limite disponível</p>
-+                            <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">
-+                                {formatCurrency(limitePorCartao[c.id]?.limiteDisponivel || 0)}
-+                            </p>
-+                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1">
-+                                Em uso: {formatCurrency(limitePorCartao[c.id]?.despesasAtivas || 0)} ({(limitePorCartao[c.id]?.utilizacaoPct || 0).toFixed(1)}%)
-+                            </p>
-+                            <div className="mt-2 h-2 w-full rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
-+                                <div
-+                                    className="h-full bg-amber-500 transition-all"
-+                                    style={{ width: `${(limitePorCartao[c.id]?.utilizacaoPct || 0).toFixed(1)}%` }}
-+                                />
++                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Limite total: {formatCurrency(Number(c.limite))}</p>
++                                <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mt-1">Disponível: {formatCurrency(Math.max(Number(c.limite) - (limiteUtilizadoPorCartao[c.id] || 0), 0))}</p>
++                                <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mt-1">Em aberto: {formatCurrency(limiteUtilizadoPorCartao[c.id] || 0)}</p>
                              </div>
                          </div>
  
