@@ -19,7 +19,7 @@
   ],
   "rewrites": [
     {
-      "source": "/api/:path((?!cron/).*)",
+      "source": "/api/((?!cron/).*)",
       "destination": "https://xoegapeodtbncirqvlmi.supabase.co/functions/v1/:path"
     },
     {

@@ -1,10 +1,4 @@
-diff --git a/scripts/verify-clean-source.mjs b/scripts/verify-clean-source.mjs
-index fad9f70ef5d172e0d9487526f29015332d63eb51..b28f6921eefbb645896c4af1bdb3127c69743ee1 100644
---- a/scripts/verify-clean-source.mjs
-+++ b/scripts/verify-clean-source.mjs
-@@ -1,30 +1,31 @@
--import { readFileSync } from 'node:fs'
-+import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
  import { execSync } from 'node:child_process'
  
  const tracked = execSync('git ls-files', { encoding: 'utf8' })
@@ -15,7 +9,7 @@ index fad9f70ef5d172e0d9487526f29015332d63eb51..b28f6921eefbb645896c4af1bdb3127c
  const problems = []
  
  for (const file of tracked) {
-+  if (!existsSync(file)) continue
+  if (!existsSync(file)) continue
    const content = readFileSync(file, 'utf8')
    const firstLine = content.split('\n', 1)[0] ?? ''
  
