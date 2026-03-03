@@ -4,8 +4,13 @@ import InteligenciaFeature from '@/src/components/features/Inteligencia'
 import { useRouteToast } from '@/src/lib/useRouteToast'
 import { Database } from '@/src/types'
 
-export function InteligenciaRoute({ db }: { db: Database }) {
-  const toast = useRouteToast()
+interface InteligenciaRouteProps {
+  db: Database
+  userEmail: string
+  alertasConfig: any[]
+}
 
-  return <InteligenciaFeature db={db} toast={toast} theme="dark" />
+export function InteligenciaRoute({ db, userEmail, alertasConfig }: InteligenciaRouteProps) {
+  const toast = useRouteToast()
+  return <InteligenciaFeature db={db} toast={toast} theme="dark" userEmail={userEmail} alertasConfig={alertasConfig} />
 }
